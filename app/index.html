@@ -1022,6 +1022,14 @@
   </div>
 </div>
 
+<div id="avisoArmazenamento" style="display:none;position:fixed;left:12px;right:12px;bottom:84px;z-index:9400;background:#fff3cd;border:1.5px solid #e0a800;color:#5c4400;border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:13.5px;max-width:560px;margin:0 auto;">
+  <div style="display:flex;gap:10px;align-items:flex-start;">
+    <span style="font-size:18px;line-height:1;">⚠️</span>
+    <span id="avisoArmazenamentoTexto" style="flex:1;"></span>
+    <button type="button" id="avisoArmazenamentoFechar" aria-label="Fechar aviso" style="background:none;border:none;font-size:18px;line-height:1;cursor:pointer;color:#5c4400;">✕</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="legadoOverlay" style="display:none;">
   <div class="modal-box">
     <h3>Trazer o histórico deste aparelho?</h3>
@@ -1461,7 +1469,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.0.1";
+const APP_VERSION = "2.1.0";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -1499,6 +1507,40 @@ function sessaoGravar(){
 // por isso ele não muda no meio do uso. Sem login, vale 0 (área vazia).
 const REP_ID = SESSAO ? SESSAO.rep.id : 0;
 function chaveRep(k){ return k + '_r' + REP_ID; }
+
+// ---------------------------------------------------------------------
+// MARCA DA EMPRESA — nome, subtítulo, cor e logo definidos no painel (botão
+// "Marca" da empresa). Chega no pacote do servidor e fica guardada no aparelho:
+// a do vendedor logado, e a última usada (para a tela de login já abrir com ela).
+// Sem marca cadastrada, vale a marca padrão do VendaCampo.
+// ---------------------------------------------------------------------
+const BRANDING_PADRAO = Object.assign({}, BRANDING);
+const MARCA_ULTIMA_KEY = 'vendasapp_marca_ultima';
+const MARCA_KEY = chaveRep('vendasapp_marca');
+function marcaLimpa(m, nomeEmpresa){
+  if(!m || typeof m !== 'object') return null;
+  const txt = (v, n) => typeof v === 'string' ? v.trim().slice(0, n) : '';
+  const cor = typeof m.cor === 'string' && /^#[0-9a-f]{6}$/i.test(m.cor) ? m.cor.toLowerCase() : '';
+  const logo = typeof m.logo === 'string' && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(m.logo) && m.logo.length < 600000 ? m.logo : null;
+  const nome = txt(m.nome, 40) || txt(nomeEmpresa, 40);
+  if(!nome && !cor && !logo) return null;
+  return {nome, subtitulo: txt(m.subtitulo, 60), cor, logo};
+}
+// Aplica a marca aos dados (BRANDING). Quem chama redesenha a tela com applyBranding().
+function marcaUsar(m){
+  BRANDING.empresa = (m && m.nome) || BRANDING_PADRAO.empresa;
+  BRANDING.subtitulo = m ? (m.subtitulo || '') : BRANDING_PADRAO.subtitulo;
+  BRANDING.cor = (m && m.cor) || BRANDING_PADRAO.cor;
+  BRANDING.logo = (m && m.logo) || BRANDING_PADRAO.logo;
+}
+function marcaLerGuardada(){
+  try{
+    const raw = localStorage.getItem(SESSAO ? MARCA_KEY : MARCA_ULTIMA_KEY);
+    if(raw === null && SESSAO) return marcaLimpa(JSON.parse(localStorage.getItem(MARCA_ULTIMA_KEY) || 'null'));
+    return marcaLimpa(JSON.parse(raw || 'null'));
+  }catch(e){ return null; }
+}
+marcaUsar(marcaLerGuardada());
 
 /* =====================================================================
    DADOS — este arquivo não traz preços. A tabela chega do servidor
@@ -1662,7 +1704,11 @@ function pacoteLerCache(){
 }
 function pacoteGravarCache(c){
   try{ localStorage.setItem(PACOTE_KEY, JSON.stringify(c)); return true; }
-  catch(e){ console.warn('Não foi possível guardar a tabela de preços neste aparelho:', e); return false; }
+  catch(e){
+    console.warn('Não foi possível guardar a tabela de preços neste aparelho:', e);
+    if(typeof avisoArmazenamento === 'function') avisoArmazenamento('A memória do app neste aparelho está cheia: a tabela de preços não ficou guardada para usar sem internet. Em Histórico, toque em "Exportar backup" e depois apague orçamentos antigos.');
+    return false;
+  }
 }
 // O "comum" só vale se vier inteiro (prazos, descontos e frete).
 function comumCompleto(c){
@@ -1890,6 +1936,7 @@ function salvarHistoricoLocal(){
     // Armazenamento cheio ou indisponível (ex: navegação privada) — o app
     // continua funcionando normalmente, só não persiste entre sessões.
     console.warn('Não foi possível salvar o histórico no aparelho:', e);
+    if(typeof avisoArmazenamento === 'function') avisoArmazenamento('A memória do app neste aparelho está cheia e o último orçamento NÃO ficou guardado no histórico. Em Histórico, toque em "Exportar backup" e depois apague orçamentos antigos.');
   }
   renderCopiloto();
 }
@@ -2920,8 +2967,11 @@ document.getElementById('protoRc').addEventListener('input', e=>{ state.protocol
 
 // ---- PDF: proposta comercial + protocolo nutricional ----
 function pdfCor(){
-  const h = (BRANDING.cor||'#b3201f').replace('#','');
-  return [parseInt(h.slice(0,2),16)||179, parseInt(h.slice(2,4),16)||32, parseInt(h.slice(4,6),16)||31];
+  // cor da empresa (#rrggbb ou #rgb); fora desse formato, usa a cor padrão
+  let h = String(BRANDING.cor||'').trim().replace('#','');
+  if(/^[0-9a-f]{3}$/i.test(h)) h = h.split('').map(c=>c+c).join('');
+  if(!/^[0-9a-f]{6}$/i.test(h)) return [179, 32, 31];
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
 }
 function mixCor(c, t, alvo){ alvo = alvo||[255,255,255]; return c.map((v,i)=>Math.round(v+(alvo[i]-v)*t)); }
 async function pdfLogoInfo(){
@@ -4782,8 +4832,13 @@ document.getElementById('loginModalBackdrop').addEventListener('click', (e)=>{
 // ---- Sair ---------------------------------------------------------------
 // Apaga a sessão e a cópia da tabela de preços deste aparelho. O histórico,
 // a meta e o orçamento em andamento do vendedor ficam guardados e voltam no próximo login.
-function sessaoSair(){
+async function sessaoSair(){
   salvarRascunho();
+  // encerra o token deste aparelho também no servidor (se houver internet; sem internet, sai mesmo assim)
+  if(SESSAO && SESSAO.token){
+    document.querySelectorAll('#contaSairBtn,#sessaoSairBtn,#trocaSairBtn').forEach(b=>{ b.disabled = true; });
+    await apiChamar('/api/sair', {deviceId: CURRENT_DEVICE_ID}, SESSAO.token, 5000);
+  }
   pacoteApagarCache();
   SESSAO = null;
   sessaoGravar();
@@ -4799,6 +4854,43 @@ function sessaoEncerrada(msg){
   sessaoGravar();
   try{ sessionStorage.setItem(AVISO_KEY, msg || 'Sessão encerrada. Entre de novo com seu usuário e senha.'); }catch(e){}
   recarregarApp();
+}
+
+// ---- Marca da empresa ---------------------------------------------------------
+function marcaTelas(){
+  const base = document.getElementById('loginMark');
+  ['sessaoMark','trocaMark'].forEach(id=>{ const el = document.getElementById(id); if(el && base) el.innerHTML = base.innerHTML; });
+  const n = document.getElementById('sessaoAppName'); if(n) n.textContent = BRANDING.empresa;
+}
+// Marca recebida no pacote: guarda e, se mudou, redesenha as telas.
+function marcaReceber(empresa){
+  const nova = marcaLimpa(empresa && empresa.marca, empresa && empresa.nome);
+  const antes = JSON.stringify({e: BRANDING.empresa, s: BRANDING.subtitulo, c: BRANDING.cor, l: BRANDING.logo});
+  try{
+    localStorage.setItem(MARCA_KEY, JSON.stringify(nova));
+    localStorage.setItem(MARCA_ULTIMA_KEY, JSON.stringify(nova));
+  }catch(e){}
+  marcaUsar(nova);
+  if(JSON.stringify({e: BRANDING.empresa, s: BRANDING.subtitulo, c: BRANDING.cor, l: BRANDING.logo}) !== antes){
+    applyBranding();
+    marcaTelas();
+  }
+}
+
+// ---- Armazenamento do aparelho -------------------------------------------------
+// Avisa (e não some sozinho) quando o aparelho não consegue guardar algo importante.
+function avisoArmazenamento(msg){
+  const el = document.getElementById('avisoArmazenamento');
+  if(!el) return;
+  document.getElementById('avisoArmazenamentoTexto').textContent = msg;
+  el.style.display = '';
+}
+document.getElementById('avisoArmazenamentoFechar').addEventListener('click', ()=>{ document.getElementById('avisoArmazenamento').style.display = 'none'; });
+// Espaço usado pelo app neste navegador (aproximado; o limite costuma ser 5 MB).
+function espacoUsado(){
+  let n = 0;
+  try{ for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); n += (k.length + (localStorage.getItem(k) || '').length) * 2; } }catch(e){}
+  return n;
 }
 
 // ---- Conferência do acesso ----------------------------------------------
@@ -4843,7 +4935,13 @@ function sessaoDecidir(r, modo){
     if(!Array.isArray(SESSAO.rep.tabelas)) SESSAO.rep.tabelas = [];
     SESSAO.validadoEm = Date.now();
     SESSAO.trocarSenha = false;
+    // sessão renovada pelo servidor (token com mais de 7 dias): guarda o novo
+    if(typeof r.corpo.tokenNovo === 'string' && r.corpo.tokenNovo.indexOf('.') > 0){
+      SESSAO.token = r.corpo.tokenNovo;
+      SESSAO.expiraEm = typeof r.corpo.expiraEm === 'string' ? r.corpo.expiraEm : SESSAO.expiraEm;
+    }
     sessaoGravar();
+    marcaReceber(r.corpo.empresa);
     const res = pacoteAplicarTabela(r.novo, SESSAO.rep.tabelas);
     if(res !== 'invalida') pacoteGravarCache(r.novo);
     appLiberar();
@@ -4978,6 +5076,7 @@ function contaRender(){
     linha('Tabela de preços', tabela) +
     linha('Último acesso conferido', SESSAO.validadoEm ? new Date(SESSAO.validadoEm).toLocaleString('pt-BR') : '—') +
     (tabelaUltimoStatus ? linha('Última verificação', tabelaUltimoStatus) : '') +
+    linha('Espaço usado no aparelho', (()=>{ const b = espacoUsado(), pct = Math.min(100, Math.round(b / (5*1024*1024) * 100)); return (b/1024/1024).toFixed(1).replace('.', ',') + ' MB (cerca de ' + pct + '%)' + (pct >= 80 ? ' — exporte o backup do histórico' : ''); })()) +
     linha('Versão do app', APP_VERSION);
   document.getElementById('contaLegadoBtn').style.display = legadoDisponivel() ? '' : 'none';
 }
@@ -5070,8 +5169,7 @@ document.getElementById('legadoNaoBtn').addEventListener('click', ()=>{
    INIT
    ===================================================================== */
 applyBranding();
-['sessaoMark','trocaMark'].forEach(id=>{ const el = document.getElementById(id), base = document.getElementById('loginMark'); if(el && base) el.innerHTML = base.innerHTML; });
-{ const el = document.getElementById('sessaoAppName'); if(el) el.textContent = BRANDING.empresa; }
+marcaTelas();
 // só revela a tela de abertura e as telas de acesso DEPOIS de aplicar a marca certa.
 const __appInicial = document.querySelector('.app');
 if(__appInicial) __appInicial.classList.add('app-ready');
