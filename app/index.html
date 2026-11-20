@@ -706,13 +706,14 @@
           <div id="freteManualWrap" style="display:none;"><label id="freteValorLbl">Valor (R$)</label><input type="text" id="freteValor" inputmode="decimal" autocomplete="off" value="0"></div>
         </div>
         <div class="grid-3 mt8" id="freteFaixaWrap">
-          <div>
-            <label>Faixa de peso do pedido</label>
+          <div id="freteFaixaBox">
+            <label id="freteFaixaLbl">Faixa de peso do pedido</label>
             <select id="freteFaixa"></select>
           </div>
-          <div><label>Peso total do pedido</label><input type="text" id="fretePesoView" disabled></div>
-          <div><label>Total de frete</label><input type="text" id="freteTotalView" disabled></div>
+          <div id="fretePesoBox"><label id="fretePesoLbl">Peso total do pedido</label><input type="text" id="fretePesoView" disabled></div>
+          <div><label id="freteTotalLbl">Total de frete</label><input type="text" id="freteTotalView" disabled></div>
         </div>
+        <div class="info-note" id="freteLinhasInfo" style="display:none;"></div>
         <div class="info-note" id="freteInfoNote">A faixa de peso é sugerida automaticamente pelo total de sacos do orçamento, mas pode ser ajustada manualmente (ex: consolidação de carga). Tabela de Frete BA 01/26 — Revisão 14/03/2026, posto Vitória da Conquista/BA. O frete não é somado ao valor enviado ao cliente por PDF/WhatsApp — ele aparece só na aba Conferência, para seu controle interno.</div>
       </div>
     </div>
@@ -1492,7 +1493,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.2.1";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -1873,6 +1874,7 @@ function renderLinhasConfig(r){
   const soOutras = r.temOutras && !r.linhas.nutricao;
   ['cardTermNutri','cardDescNutri'].forEach(id=>{ const el = document.getElementById(id); if(el) el.style.display = soOutras ? 'none' : ''; });
   document.querySelectorAll('.tagNutri').forEach(el=>{ el.textContent = r.temOutras ? ' — Nutrição Animal' : ''; });
+  renderFreteLinhas(r, soOutras);
   if(!r.temOutras){ box.innerHTML = ''; return; }
   box.innerHTML = LINHA_IDS.filter(l=>r.linhas[l]).map(l=>{
     const L = r.linhas[l], c = linhaCfg(l), info = LINHAS[l];
@@ -1957,6 +1959,31 @@ function renderNegociacaoComissoes(r, rebuild){
   const ap = document.getElementById('negAprovadoPor'), ob = document.getElementById('negObs');
   if(ap && document.activeElement !== ap) ap.value = state.negAprovadoPor || '';
   if(ob && document.activeElement !== ob) ob.value = state.negObs || '';
+}
+
+// Quadro Frete: com outras linhas, cada uma mostra o próprio peso, faixa e frete
+function renderFreteLinhas(r, soOutras){
+  const txt = (id, t)=>{ const el = document.getElementById(id); if(el) el.textContent = t; };
+  const mostra = (id, v)=>{ const el = document.getElementById(id); if(el) el.style.display = v ? '' : 'none'; };
+  const info = document.getElementById('freteLinhasInfo');
+  if(!r.temOutras){
+    txt('freteFaixaLbl', 'Faixa de peso do pedido'); txt('fretePesoLbl', 'Peso total do pedido'); txt('freteTotalLbl', 'Total de frete');
+    mostra('freteFaixaBox', true); mostra('fretePesoBox', true);
+    if(info){ info.style.display = 'none'; info.innerHTML = ''; }
+    return;
+  }
+  txt('freteFaixaLbl', 'Faixa de peso — só a ração'); txt('fretePesoLbl', 'Peso da ração'); txt('freteTotalLbl', 'Total de frete (todas as linhas)');
+  mostra('freteFaixaBox', !soOutras); mostra('fretePesoBox', !soOutras);
+  if(!info) return;
+  const entrega = ['tabela','saco','fixo'].includes(state.freteModo);
+  const linhas = Object.values(r.linhas).map(L=>{
+    if(L.linha === 'medicamentos') return `<div>${LINHA_ICONE[L.linha]} <b>Medicamentos:</b> sem frete (preço da tabela)</div>`;
+    const faixa = state.freteModo === 'tabela' ? ' · faixa ' + esc(faixaLabel(L.faixa)) : '';
+    const nome = L.linha === 'nutricao' ? 'Ração' : 'Sementes';
+    return `<div>${LINHA_ICONE[L.linha]} <b>${nome}:</b> ${fmtNum(L.kg)} kg${faixa} · frete ${entrega ? fmtBRL(L.frete) : 'R$ 0,00'}</div>`;
+  }).join('');
+  info.style.display = '';
+  info.innerHTML = '<b>Frete por linha</b> (a faixa de peso de cada linha conta só os kg dela)' + linhas;
 }
 
 const FAIXAS_FRETE = [
