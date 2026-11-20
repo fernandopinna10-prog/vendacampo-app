@@ -341,6 +341,17 @@
   .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px;}
   .chip{padding:8px 13px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink);}
   .chip.on{background:var(--brand);border-color:var(--brand);color:#fff;}
+  .linha-tabs{margin:0 0 12px;}
+  .linha-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .linha-tipo{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);}
+  .chip-sm{padding:5px 10px;font-size:12.5px;}
+  .linha-tit{font-size:12px;color:var(--ink-soft);}
+  .aviso-linha{background:var(--warn-bg);border-color:#e8c98a;color:var(--warn);font-weight:600;margin-top:8px;}
+  .ha-box{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12.5px;color:var(--ink-soft);}
+  .ha-box input{width:72px;padding:5px 6px;}
+  .ha-info{font-size:12px;color:var(--ok);margin-top:3px;}
+  .conf-linha{padding:8px 0;border-bottom:1px solid var(--line);}
+  #negComissoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;}
   .tag-prazo{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#eef0f2;color:#4b5563;margin-left:4px;}
   .tag-prazo.atrasado{background:#fde8e8;color:#b3201f;}
   .perda-row{margin:9px 0;}
@@ -537,7 +548,7 @@
     <button class="nav-item active" data-view="catalogo">📦 Catálogo</button>
     <button class="nav-item" data-view="rapido">⚡ Orçamento rápido</button>
     <button class="nav-item" data-view="orcamento">🧾 Orçamento</button>
-    <button class="nav-item" data-view="descontoextra">🏷️ Desconto Extra</button>
+    <button class="nav-item" data-view="descontoextra">🏷️ Negociação Especial</button>
     <button class="nav-item" data-view="custoanimal">🐂 Custo Animal/Dia</button>
     <button class="nav-item" data-view="conferencia">✅ Conferência</button>
     <button class="nav-item" data-view="historico">🗂️ Histórico</button>
@@ -571,6 +582,7 @@
         <button class="btn btn-primary btn-block mt16" id="btnComecarDia" style="font-size:15.5px;padding:13px;">▶️ COMEÇAR MEU DIA</button>
       </div>
 
+      <div id="linhaTabs" class="linha-tabs" style="display:none;"></div>
       <div class="search-row">
         <input type="text" id="searchInput" placeholder="Buscar produto ou código...">
         <select id="catFilter"></select>
@@ -648,8 +660,10 @@
         <div id="cartList"><div class="empty-state">Nenhum produto adicionado ainda.<br>Vá até o Catálogo e adicione produtos.</div></div>
       </div>
 
-      <div class="card">
-        <h3>Condição de pagamento</h3>
+      <div id="linhasConfig"></div>
+
+      <div class="card" id="cardTermNutri">
+        <h3>Condição de pagamento<span class="tagNutri"></span></h3>
         <div class="term-pick" id="termPick"></div>
         <div class="grid-2 mt8">
           <div>
@@ -660,8 +674,8 @@
         </div>
       </div>
 
-      <div class="card">
-        <h3>Desconto e comissão <span style="font-weight:400;color:var(--ink-soft);">(uso interno)</span></h3>
+      <div class="card" id="cardDescNutri">
+        <h3>Desconto e comissão<span class="tagNutri"></span> <span style="font-weight:400;color:var(--ink-soft);">(uso interno)</span></h3>
         <div class="grid-2">
           <div>
             <label>Desconto aplicado</label>
@@ -672,7 +686,7 @@
             <input type="text" id="comissaoView" disabled>
           </div>
         </div>
-        <div class="info-note">O desconto reduz o valor do saco na condição escolhida, conforme a Tabela de Descontos 04/26 (comissão abaixo de 3% é proibida pela política comercial). A comissão do vendedor é sempre calculada sobre o valor final negociado, sem o frete — inclui o efeito do desconto extra da aba "Desconto Extra", se houver (os dois descontos são aplicados separados, não somados). Essa informação é só para uso interno — não aparece no PDF/WhatsApp do cliente.</div>
+        <div class="info-note">O desconto reduz o valor do saco na condição escolhida, conforme a Tabela de Descontos 04/26 (comissão abaixo de 3% é proibida pela política comercial). A comissão do vendedor é sempre calculada sobre o valor final negociado, sem o frete — inclui o efeito do desconto extra ou preço combinado da aba "Negociação Especial", se houver (os dois descontos são aplicados separados, não somados). Essa informação é só para uso interno — não aparece no PDF/WhatsApp do cliente.</div>
       </div>
 
       <div class="card">
@@ -705,17 +719,17 @@
 
     <!-- DESCONTO EXTRA -->
     <div class="view" id="view-descontoextra">
-      <h1 class="page-title">Desconto Extra</h1>
-      <p class="page-sub">Use somente em negociações especiais, quando o desconto padrão da Tabela de Descontos 04/26 não for suficiente. Uso interno — o valor final aparece nos totais do orçamento e da conferência.</p>
+      <h1 class="page-title">Negociação Especial</h1>
+      <p class="page-sub">Use somente em negociações especiais, combinadas com a empresa: desconto extra (%) ou preço combinado em cada produto e, se for o caso, comissão combinada por linha. Uso interno — o cliente vê só o preço final.</p>
 
       <div class="card">
-        <h3>Aplicar desconto extra</h3>
+        <h3>Condição especial deste orçamento</h3>
         <label style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:10px;">
           <input type="checkbox" id="descExtraCheck" style="width:16px;height:16px;">
-          Ativar desconto extra nesse orçamento
+          Ativar negociação especial nesse orçamento
         </label>
         <div id="descExtraWrap" style="display:none;">
-          <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">Digite o desconto extra <b>em cada produto</b>. Quem ficar em 0% não recebe desconto extra.</p>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">Em cada produto, use <b>desconto extra (%)</b> ou <b>preço combinado</b> (sementes: R$ por kg; demais: R$ por saco ou frasco, sem o frete). O preço combinado substitui o desconto. Deixe em branco o que não mudar.</p>
           <div style="overflow-x:auto;"><table class="sim-table" id="descExtraLista"></table></div>
           <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;">
             <div>
@@ -728,6 +742,13 @@
             <label>Desconto total no orçamento (tabela + extra)</label>
             <input type="text" id="descTotalView" disabled>
           </div>
+          <h3 class="mt16">Comissão combinada e aprovação</h3>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0 0 8px;">Em branco, a comissão segue a escala de desconto da linha. Havendo preço ou comissão combinados, informe com quem foi combinado — o orçamento só é enviado ou salvo com esse campo preenchido.</p>
+          <div id="negComissoes"></div>
+          <div class="grid-2">
+            <div><label for="negAprovadoPor">Combinado com (gestor / empresa)</label><input type="text" id="negAprovadoPor" autocomplete="off" placeholder="Ex.: Fernando — gerência BA"></div>
+            <div><label for="negObs">Observação / nº da autorização</label><input type="text" id="negObs" autocomplete="off" placeholder="Opcional"></div>
+          </div>
         </div>
       </div>
 
@@ -736,7 +757,7 @@
         <div class="summary-row"><span class="lbl">Desconto de tabela (aba Orçamento)</span><span id="descExtraTabelaPct">0%</span></div>
         <div class="summary-row"><span class="lbl">Desconto extra negociado</span><span id="descExtraSoPct">0%</span></div>
         <div class="summary-row total"><span class="lbl">Valor negociado dos produtos</span><span id="descExtraTotalProduto">R$ 0,00</span></div>
-        <div class="summary-row"><span class="lbl">Comissão (continua pela tabela, sem o extra)</span><span id="descExtraComissao">R$ 0,00</span></div>
+        <div class="summary-row"><span class="lbl">Comissão (escala da linha ou combinada)</span><span id="descExtraComissao">R$ 0,00</span></div>
       </div>
 
       <div class="info-note" id="descExtraAlerta" style="display:none;background:var(--warn-bg);border-color:#e8c98a;color:var(--warn);font-weight:600;"></div>
@@ -819,6 +840,8 @@
         <div class="summary-row total"><span class="lbl">Valor total (produto + frete)</span><span id="confTotalComFrete">R$ 0,00</span></div>
         <div class="summary-row"><span class="lbl">Comissão estimada (sem frete)</span><span id="confComissao">R$ 0,00</span></div>
       </div>
+
+      <div class="card" id="confLinhas" style="display:none;"></div>
 
       <div class="card">
         <label for="cicloSelect">Ciclo da venda — define quando o app cobra o retorno</label>
@@ -978,7 +1001,7 @@
   <button class="active" data-view="catalogo">📦<span>Catálogo</span></button>
   <button data-view="rapido">⚡<span>Rápido</span></button>
   <button data-view="orcamento">🧾<span>Orçamento</span></button>
-  <button data-view="descontoextra">🏷️<span>Desc. Extra</span></button>
+  <button data-view="descontoextra">🏷️<span>Negociação</span></button>
   <button data-view="custoanimal">🐂<span>Custo/dia</span></button>
   <button data-view="conferencia">✅<span>Conferência</span></button>
   <button data-view="historico">🗂️<span>Histórico</span></button>
@@ -1469,7 +1492,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -1566,6 +1589,375 @@ const FRETE_DATA = {"Aguardando tabela":[{"cidade":"Aguardando tabela","f1_25":0
 /*<<<DATA:MATERIAIS_START>>>*/
 const MATERIAIS = [{"nome":"Nutrição Animal","url":"https://vendas-licenca.onrender.com/materiais/Nutricao.pdf"},{"nome":"Gado Leiteiro","url":"https://vendas-licenca.onrender.com/materiais/Leite.pdf"},{"nome":"Equinos","url":"https://vendas-licenca.onrender.com/materiais/Equinos.pdf"},{"nome":"Tabela de Consumo dos Produtos","url":"https://vendas-licenca.onrender.com/materiais/TabelaConsumo.pdf"}];
 /*<<<DATA:MATERIAIS_END>>>*/
+
+// Linhas de produto além da Nutrição: Sementes de Pastagem e Medicamentos (null = só Nutrição)
+/*<<<DATA:LINHAS_START>>>*/
+const LINHAS_DATA = null;
+/*<<<DATA:LINHAS_END>>>*/
+/* =====================================================================
+   LINHAS DE PRODUTO — Sementes de Pastagem e Medicamentos Veterinários.
+   Ficam ao lado da Nutrição Animal (PRODUCTS). Cada linha tem tabela
+   Consumidor ou Revenda, prazo, desconto/comissão e frete próprios:
+   - Sementes: preço por kg; o saco tem o peso da variedade; frete = tarifa
+     da tabela de frete do Mineral convertida em kg (saco de 25 kg ÷ 25),
+     com a faixa de peso calculada só pelos kg de sementes do pedido.
+   - Medicamentos: preço por frasco, sem frete.
+   Sem LINHAS (dados null), o app funciona só com a Nutrição, como antes.
+   ===================================================================== */
+const LINHA_IDS = ['sementes','medicamentos'];
+const LINHA_ICONE = {nutricao:'🐂', sementes:'🌱', medicamentos:'💉'};
+const PRAZOS_LINHA = [{key:'vista',label:'À Vista'},{key:'d30',label:'30 DF'},{key:'d3060',label:'30/60 DF'},{key:'d306090',label:'30/60/90 DF'}];
+const PARCELAS_PRAZO = {vista:1, d30:1, d3060:2, d306090:3};
+let LINHAS = null;      // dados em uso (já conferidos)
+let LINHA_INDEX = {};   // cod -> {linha, base}
+
+// Confere os dados das linhas. Devolve '' (ok) ou o motivo da recusa.
+function linhasValidar(d){
+  if(!d || typeof d !== 'object' || Array.isArray(d)) return 'dados inválidos';
+  if(typeof d.versao !== 'string' || !/^\d{4}-\d{2}-\d{2}(\.\d+)?$/.test(d.versao)) return 'versão inválida';
+  const num = v => typeof v === 'number' && isFinite(v);
+  const cods = new Set();
+  let algum = false;
+  for(const l of LINHA_IDS){
+    const L = d[l];
+    if(L == null) continue;
+    if(typeof L !== 'object' || typeof L.nome !== 'string' || !L.nome) return 'linha sem nome: ' + l;
+    if(!L.tipos || typeof L.tipos !== 'object' || !L.tipos.consumidor) return 'linha sem tabela Consumidor: ' + l;
+    for(const t of Object.keys(L.tipos)){
+      if(t !== 'consumidor' && t !== 'revenda') return 'tipo de tabela inválido em ' + l;
+      const T = L.tipos[t];
+      if(!T || !Array.isArray(T.escala) || !T.escala.length) return 'escala de desconto ausente em ' + l + ' (' + t + ')';
+      for(const e of T.escala){ if(!e || !num(e.desc) || !num(e.com) || e.desc < 0 || e.desc > 50 || e.com < 0 || e.com > 30) return 'escala de desconto inválida em ' + l; }
+      if(T.volume != null){
+        if(!Array.isArray(T.volume)) return 'desconto por volume inválido em ' + l;
+        for(const v of T.volume){ if(!v || !num(v.min) || !num(v.pct) || v.pct < 0 || v.pct > 30) return 'desconto por volume inválido em ' + l; }
+      }
+    }
+    if(!Array.isArray(L.produtos) || !L.produtos.length) return 'linha sem produtos: ' + l;
+    for(const p of L.produtos){
+      if(!p || typeof p.cod !== 'string' || !p.cod || typeof p.nome !== 'string' || !p.nome) return 'produto sem código ou nome em ' + l;
+      if(cods.has(p.cod)) return 'código repetido: ' + p.cod;
+      cods.add(p.cod);
+      if(l === 'sementes' && (!num(p.peso) || p.peso <= 0 || p.peso > 100)) return 'peso do saco inválido em ' + p.nome;
+      for(const t of Object.keys(L.tipos)){
+        const pr = p[t];
+        if(!pr || typeof pr !== 'object') return 'preço ' + t + ' ausente em ' + p.nome;
+        for(const k of ['vista','d30','d3060','d306090']) if(!num(pr[k]) || pr[k] <= 0) return 'preço inválido em ' + p.nome + ' (' + t + ', ' + k + ')';
+      }
+    }
+    algum = true;
+  }
+  return algum ? '' : 'nenhuma linha de produto';
+}
+// Passa a usar os dados das linhas (ou desliga, com null). Produto com o mesmo
+// código de um produto da Nutrição fica de fora (a Nutrição tem prioridade).
+function linhasAplicar(d){
+  LINHAS = d ? JSON.parse(JSON.stringify(d)) : null;
+  LINHA_INDEX = {};
+  if(LINHAS) LINHA_IDS.forEach(l=>{
+    if(!LINHAS[l]) return;
+    LINHAS[l].produtos.forEach(p=>{ if(!PRODUCTS.some(x=>x.cod===p.cod)) LINHA_INDEX[p.cod] = {linha:l, base:p}; });
+  });
+  if(state.catLinha !== 'nutricao' && !linhasAtivas().includes(state.catLinha)) state.catLinha = 'nutricao';
+}
+function linhasAtivas(){ return LINHAS ? LINHA_IDS.filter(l=>LINHAS[l] && LINHAS[l].produtos.length) : []; }
+function linhaDoItem(p){ return (p && p.linha) || 'nutricao'; }
+function linhaNome(l){ return l === 'nutricao' ? 'Nutrição Animal' : (LINHAS && LINHAS[l] ? LINHAS[l].nome : l); }
+function linhaCfg(l){
+  if(!state.linhas || typeof state.linhas !== 'object') state.linhas = {};
+  let c = state.linhas[l];
+  if(!c || typeof c !== 'object') c = state.linhas[l] = {};
+  if(c.tipo !== 'consumidor' && c.tipo !== 'revenda') c.tipo = 'consumidor';
+  if(!PRAZOS_LINHA.some(t=>t.key===c.term)) c.term = 'vista';
+  if(!Number.isInteger(c.descIdx) || c.descIdx < 0) c.descIdx = 0;
+  if(!c.inseticida || typeof c.inseticida !== 'object') c.inseticida = {};
+  return c;
+}
+function linhaTipo(l){
+  const c = linhaCfg(l);
+  return (c.tipo === 'revenda' && LINHAS && LINHAS[l] && LINHAS[l].tipos.revenda) ? 'revenda' : 'consumidor';
+}
+function linhaTipoInfo(l){ return LINHAS[l].tipos[linhaTipo(l)]; }
+function linhaEscala(l){ return linhaTipoInfo(l).escala; }
+function linhaDesconto(l){
+  const e = linhaEscala(l), c = linhaCfg(l);
+  if(c.descIdx >= e.length) c.descIdx = 0;
+  return e[c.descIdx];
+}
+function linhaPrazoLabel(l){ const c = linhaCfg(l); return (PRAZOS_LINHA.find(t=>t.key===c.term)||PRAZOS_LINHA[0]).label; }
+// Produto de uma linha, com os preços da tabela escolhida (Consumidor ou Revenda).
+// Sementes: o preço da tabela é por kg; vista/d30/... saem por saco (preço/kg × peso do saco).
+function linhaProduto(cod){
+  const ix = LINHA_INDEX[cod];
+  if(!ix || !LINHAS) return null;
+  const b = ix.base, t = linhaTipo(ix.linha), pr = b[t];
+  const f = ix.linha === 'sementes' ? b.peso : 1;
+  return Object.assign({}, b, {linha: ix.linha, tipo: t, peso: ix.linha === 'sementes' ? b.peso : 0,
+    precoKg: ix.linha === 'sementes' ? pr : null,
+    vista: pr.vista*f, d30: pr.d30*f, d3060: pr.d3060*f, d306090: pr.d306090*f});
+}
+function linhaProdutos(l){ return (LINHAS && LINHAS[l]) ? LINHAS[l].produtos.filter(p=>LINHA_INDEX[p.cod]).map(p=>linhaProduto(p.cod)) : []; }
+function linhaTodosProdutos(){ return linhasAtivas().flatMap(linhaProdutos); }
+// Produtos do catálogo na linha escolhida
+function catalogoProdutos(){ return state.catLinha && state.catLinha !== 'nutricao' && LINHAS ? linhaProdutos(state.catLinha) : PRODUCTS; }
+// Preço de um produto na condição em uso (Nutrição: prazo do orçamento; linhas: prazo da linha)
+function precoCatalogo(p){ return p && p.linha ? p[linhaCfg(p.linha).term] : precoItem(p); }
+// Unidades para mostrar
+function unidadeQtd(p, q){
+  const n = fmtNum(q);
+  if(p && p.linha === 'sementes') return `${n} sc (${fmtNum(q*p.peso)} kg)`;
+  if(p && p.linha === 'medicamentos') return `${n} ${Number(q)===1?'frasco':'frascos'}`;
+  return `${n} ${Number(q)===1?'saco':'sacos'}`;
+}
+function precoUnitTxt(p, precoUnid){
+  if(p && p.linha === 'sementes') return fmtBRL(precoUnid / p.peso) + '/kg';
+  if(p && p.linha === 'medicamentos') return fmtBRL(precoUnid) + '/frasco';
+  return fmtBRL(precoUnid) + '/saco';
+}
+function detalheProduto(p){
+  if(p && p.linha === 'sementes') return `Saco ${fmtNum(p.peso)} kg${p.vc?' · VC '+p.vc:''}${p.kgha?' · '+p.kgha+' kg/ha':''}${p.obs?' · '+p.obs:''}`;
+  if(p && p.linha === 'medicamentos') return p.apres || '';
+  return p ? `Saco ${p.peso} Kg` : '';
+}
+// kg/ha da tabela (pode ser faixa, ex.: "4,5 a 5,5"): usa o maior valor, para não faltar semente
+function kgHaMax(txt){
+  const ns = String(txt||'').replace(/,/g,'.').match(/\d+(?:\.\d+)?/g);
+  return ns ? Math.max(...ns.map(Number)) : 0;
+}
+function sementesInseticida(cod){ return !!linhaCfg('sementes').inseticida[cod]; }
+// Frete das sementes: tarifa do saco de 25 kg da cidade ÷ 25 = R$ por kg
+function freteSementesKg(faixaKey){
+  const cidadeData = FRETE_CIDADES.find(c=>c.cidade===state.freteCidade);
+  if(!cidadeData) return 0;
+  const t = cidadeData[faixaKey + '_25'];
+  return t != null ? t/25 : 0;
+}
+// Frete manual por saco de semente: valor digitado no produto ou o padrão convertido em kg
+function freteManualSementes(cod, peso){
+  const m = state.freteItem || {};
+  if(Object.prototype.hasOwnProperty.call(m, cod)){ const v = Number(m[cod]); if(isFinite(v) && v >= 0) return v; }
+  return (Number(state.freteValor) || 0) / 25 * peso;
+}
+function sementesVolume(kg){
+  const t = linhaTipoInfo('sementes');
+  if(!Array.isArray(t.volume)) return {pct:0, codigo:''};
+  let f = {pct:0, codigo:''};
+  t.volume.slice().sort((a,b)=>a.min-b.min).forEach(v=>{ if(kg >= v.min) f = v; });
+  return {pct: f.pct || 0, codigo: f.codigo || ''};
+}
+// Negociação especial: preço combinado (sementes: R$/kg; demais: R$ por saco/frasco)
+function setPrecoComb(cod, val){
+  if(!state.precoComb) state.precoComb = {};
+  const txt = String(val == null ? '' : val).trim();
+  if(txt === '') delete state.precoComb[cod];
+  else { const v = numeroBR(txt); if(v > 0) state.precoComb[cod] = v; else delete state.precoComb[cod]; }
+  renderDescontoExtra(false); renderOrcamento();
+}
+function setComissaoComb(l, val){
+  if(!state.comissaoComb) state.comissaoComb = {};
+  const txt = String(val == null ? '' : val).trim();
+  if(txt === '') delete state.comissaoComb[l];
+  else state.comissaoComb[l] = Math.min(30, numeroBR(txt));
+  renderDescontoExtra(false); renderOrcamento();
+}
+function limparMapaNum(obj, max){
+  const out = {};
+  if(obj && typeof obj === 'object') Object.keys(obj).forEach(k=>{ const v = Number(obj[k]); if(isFinite(v) && v >= 0 && (max == null || v <= max)) out[k] = v; });
+  return out;
+}
+function limparLinhasCfg(obj){
+  const out = {};
+  if(obj && typeof obj === 'object') LINHA_IDS.forEach(l=>{
+    const c = obj[l];
+    if(!c || typeof c !== 'object') return;
+    out[l] = {tipo: c.tipo === 'revenda' ? 'revenda' : 'consumidor',
+      term: PRAZOS_LINHA.some(t=>t.key===c.term) ? c.term : 'vista',
+      descIdx: Number.isInteger(c.descIdx) && c.descIdx >= 0 ? c.descIdx : 0,
+      inseticida: Object.fromEntries(Object.entries(c.inseticida && typeof c.inseticida === 'object' ? c.inseticida : {}).filter(([k,v])=>v===true))};
+  });
+  return out;
+}
+// Falta de aprovação na negociação especial: devolve a mensagem ('' se está tudo certo)
+function negociacaoPendente(r){
+  r = r || calcOrcamento();
+  if((r.negociacao.temPrecoComb || r.negociacao.temComissaoComb) && !String(state.negAprovadoPor||'').trim())
+    return 'Preço ou comissão combinados: preencha "Combinado com" na aba Negociação Especial antes de enviar ou salvar.';
+  return '';
+}
+function avisosLinha(l, r){
+  const L = r.linhas[l];
+  if(!L) return [];
+  const a = [];
+  const entrega = ['tabela','saco','fixo'].includes(state.freteModo);
+  if(l === 'sementes'){
+    const S = LINHAS.sementes, tp = linhaTipoInfo('sementes');
+    if(L.tipo === 'revenda' && tp.minKg && L.kg < tp.minKg) a.push(`Revenda: pedido mínimo de ${fmtNum(tp.minKg)} kg de sementes (este tem ${fmtNum(L.kg)} kg).`);
+    if(entrega && S.transportadoraAbaixoKg && L.kg < S.transportadoraAbaixoKg) a.push(`Abaixo de ${fmtNum(S.transportadoraAbaixoKg)} kg: entrega por transportadora ou correio, com frete a cobrar do cliente.`);
+    else if(entrega && S.fazendaMinKg && L.kg < S.fazendaMinKg) a.push(`Entrega na fazenda exige no mínimo ${fmtNum(S.fazendaMinKg)} kg de sementes (este tem ${fmtNum(L.kg)} kg).`);
+    if(S.faturamentoMin && L.subNeg < S.faturamentoMin) a.push(`Valor mínimo de faturamento das sementes: ${fmtBRL(S.faturamentoMin)}.`);
+    const np = PARCELAS_PRAZO[linhaCfg('sementes').term] || 1;
+    if(np > 1 && S.parcelaMin && L.subNeg/np < S.parcelaMin) a.push(`Parcela mínima de ${fmtBRL(S.parcelaMin)}: em ${np} parcelas cada uma fica em ${fmtBRL(L.subNeg/np)}.`);
+    r.items.filter(it=>it.linha==='sementes' && it.p.obs).forEach(it=>a.push(`${it.p.nome}: ${it.p.obs.toLowerCase()} com a empresa.`));
+  }
+  if(l === 'medicamentos'){
+    const tp = linhaTipoInfo('medicamentos');
+    if(L.tipo === 'revenda' && tp.pedidoMin && L.subNeg < tp.pedidoMin) a.push(`Revenda: pedido mínimo de medicamentos de ${fmtBRL(tp.pedidoMin)} (este tem ${fmtBRL(L.subNeg)}).`);
+  }
+  return a;
+}
+
+// ---- Telas das linhas de produto -------------------------------------------
+function fmtPct(v){ return (Number(v)||0).toFixed(2).replace('.',',') + '%'; }
+function fmtPct1(v){ return (Number(v)||0).toFixed(1).replace('.',',') + '%'; }
+function faixaLabel(key){ const f = FAIXAS_FRETE.find(x=>x.key===key); return f ? f.label : '—'; }
+function precoMostrar(p, k){ return p.linha === 'sementes' ? p.precoKg[k] : p[k]; }
+
+// Abas do catálogo (Nutrição | Sementes | Medicamentos) e tabela Consumidor/Revenda
+function renderLinhaTabs(){
+  const box = document.getElementById('linhaTabs');
+  if(!box) return;
+  const ativas = linhasAtivas();
+  if(!ativas.length){
+    box.style.display = 'none'; box.innerHTML = '';
+    if(state.catLinha !== 'nutricao'){ state.catLinha = 'nutricao'; refreshCatFilterOptions(); }
+    return;
+  }
+  const l = ativas.includes(state.catLinha) ? state.catLinha : 'nutricao';
+  state.catLinha = l;
+  box.style.display = '';
+  let h = '<div class="linha-chips">' + ['nutricao'].concat(ativas).map(x=>
+    `<button type="button" class="chip ${x===l?'on':''}" onclick="escolherLinhaCatalogo(${jsArg(x)})">${LINHA_ICONE[x]||''} ${esc(linhaNome(x))}</button>`).join('') + '</div>';
+  if(l !== 'nutricao'){
+    const L = LINHAS[l];
+    h += '<div class="linha-tipo"><span>Tabela:</span>' + ['consumidor','revenda'].filter(t=>L.tipos[t]).map(t=>
+      `<button type="button" class="chip chip-sm ${linhaTipo(l)===t?'on':''}" onclick="setLinhaTipo(${jsArg(l)}, ${jsArg(t)})">${esc(L.tipos[t].label)}</button>`).join('') +
+      `<span class="linha-tit">${esc(L.titulo||'')}${l==='sementes'?' · preço por kg':' · preço por frasco'}</span></div>`;
+  }
+  box.innerHTML = h;
+  if(catFilter.dataset.linha !== l){ catFilter.dataset.linha = l; refreshCatFilterOptions(); }
+}
+function escolherLinhaCatalogo(l){
+  state.catLinha = (l === 'nutricao' || linhasAtivas().includes(l)) ? l : 'nutricao';
+  catFilter.value = '';
+  renderCatalog();
+  agendarRascunho();
+}
+function setLinhaTipo(l, t){
+  linhaCfg(l).tipo = t === 'revenda' ? 'revenda' : 'consumidor';
+  linhaDesconto(l); // ajusta o desconto se a escala da outra tabela for menor
+  renderCatalog(); renderOrcamento(); renderDescontoExtra();
+}
+function setLinhaTerm(l, k){ if(PRAZOS_LINHA.some(t=>t.key===k)) linhaCfg(l).term = k; renderOrcamento(); renderDescontoExtra(false); }
+function setLinhaDesc(l, i){ linhaCfg(l).descIdx = Math.max(0, parseInt(i,10) || 0); linhaDesconto(l); renderOrcamento(); renderDescontoExtra(false); }
+function setInseticida(cod, on){
+  const c = linhaCfg('sementes');
+  if(on) c.inseticida[cod] = true; else delete c.inseticida[cod];
+  renderOrcamento(); renderDescontoExtra(false);
+}
+// Área (ha) × kg/ha da variedade → sacos
+function calcHa(cod){
+  const p = findProduct(cod);
+  const inp = document.getElementById('ha-'+cod), q = document.getElementById('qty-'+cod), info = document.getElementById('haInfo-'+cod);
+  if(!p || !inp || !q) return;
+  const ha = numeroBR(inp.value), kgha = kgHaMax(p.kgha);
+  if(!(ha > 0) || !(kgha > 0)){ if(info) info.textContent = ''; return; }
+  const kg = ha * kgha, sc = Math.max(1, Math.ceil(kg / p.peso));
+  q.value = sc;
+  if(info) info.textContent = `${fmtNum(ha)} ha × ${fmtNum(kgha)} kg/ha = ${fmtNum(kg)} kg → ${sc} sacos (${fmtNum(sc*p.peso)} kg)`;
+}
+
+// Quadro de cada linha no Orçamento: tabela, prazo, desconto/comissão, frete e avisos
+function renderLinhasConfig(r){
+  const box = document.getElementById('linhasConfig');
+  if(!box) return;
+  const soOutras = r.temOutras && !r.linhas.nutricao;
+  ['cardTermNutri','cardDescNutri'].forEach(id=>{ const el = document.getElementById(id); if(el) el.style.display = soOutras ? 'none' : ''; });
+  document.querySelectorAll('.tagNutri').forEach(el=>{ el.textContent = r.temOutras ? ' — Nutrição Animal' : ''; });
+  if(!r.temOutras){ box.innerHTML = ''; return; }
+  box.innerHTML = LINHA_IDS.filter(l=>r.linhas[l]).map(l=>{
+    const L = r.linhas[l], c = linhaCfg(l), info = LINHAS[l];
+    const tipos = ['consumidor','revenda'].filter(t=>info.tipos[t]).map(t=>
+      `<button type="button" class="chip ${L.tipo===t?'on':''}" onclick="setLinhaTipo(${jsArg(l)}, ${jsArg(t)})">${esc(info.tipos[t].label)}</button>`).join('');
+    const prazos = PRAZOS_LINHA.map(t=>`<div class="term-opt ${c.term===t.key?'sel':''}" onclick="setLinhaTerm(${jsArg(l)}, ${jsArg(t.key)})">${esc(t.label)}</div>`).join('');
+    const opts = linhaEscala(l).map((e,i)=>`<option value="${i}" ${i===c.descIdx?'selected':''}>${fmtPct(e.desc)} de desconto — comissão ${fmtPct1(e.com)}</option>`).join('');
+    let extra = '';
+    if(l === 'sementes'){
+      extra += `<div class="summary-row"><span class="lbl">Peso das sementes</span><span>${fmtNum(L.kg)} kg · faixa ${esc(faixaLabel(L.faixa))}</span></div>`;
+      if(L.tipo === 'revenda') extra += `<div class="summary-row"><span class="lbl">Desconto por volume (não mexe na comissão)</span><span>${L.volume.pct ? fmtPct(L.volume.pct) : 'sem desconto extra'}</span></div>`;
+      extra += `<div class="summary-row"><span class="lbl">Frete das sementes</span><span>${['tabela','saco','fixo'].includes(state.freteModo) ? fmtBRL(L.frete) : 'sem frete'}</span></div>`;
+    } else {
+      extra += '<div class="summary-row"><span class="lbl">Frete</span><span>sem frete (preço da tabela)</span></div>';
+    }
+    return `<div class="card linha-card">
+      <h3>${LINHA_ICONE[l]} ${esc(L.nome)} <span style="font-weight:400;color:var(--ink-soft);">(${L.itens} item(ns) · uso interno)</span></h3>
+      <label>Tabela de preços</label><div class="linha-chips">${tipos}</div>
+      <label class="mt8">Condição de pagamento</label><div class="term-pick">${prazos}</div>
+      <div class="grid-2 mt8">
+        <div><label>Desconto aplicado</label><select onchange="setLinhaDesc(${jsArg(l)}, this.value)">${opts}</select></div>
+        <div><label>Comissão resultante (sem frete)</label><input type="text" disabled value="${esc(fmtPct1(L.comissaoPct) + (L.comissaoCombinada?' combinada':'') + ' (' + fmtBRL(L.comissao) + ')')}"></div>
+      </div>
+      ${extra}
+      ${L.codigos.length ? `<div class="summary-row"><span class="lbl">Código(s) para o pedido</span><span>${esc(L.codigos.join(' · '))}</span></div>` : ''}
+      ${avisosLinha(l, r).map(a=>`<div class="info-note aviso-linha">⚠️ ${esc(a)}</div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// Conferência: linhas da tabela de itens (agrupadas por linha quando há mais de uma)
+function confItensRows(r){
+  const linhaHtml = it=>`<tr>
+          <td style="text-align:left;">${esc(it.p.nome)}${it.inseticida?' <small>(com inseticida)</small>':''}${it.combinado?' <small>(preço combinado)</small>':''}</td>
+          <td>${r.temOutras ? esc(unidadeQtd(it.p, it.qty)) : it.qty}</td>
+          <td>${r.temOutras ? esc(precoUnitTxt(it.p, it.precoFinal)) : fmtBRL(it.precoFinal)}</td>
+          <td>${fmtBRL(it.subFinal)}</td>
+        </tr>`;
+  if(!r.temOutras) return r.items.map(linhaHtml).join('');
+  return Object.values(r.linhas).map(L=>
+    `<tr><td colspan="4" style="text-align:left;font-weight:800;background:var(--brand-light);">${LINHA_ICONE[L.linha]} ${esc(L.nome)} — ${esc(L.termLabel)}</td></tr>` +
+    r.items.filter(it=>it.linha===L.linha).map(linhaHtml).join('')).join('');
+}
+// Conferência: detalhamento interno por linha + negociação especial
+function renderConfLinhas(r){
+  const box = document.getElementById('confLinhas');
+  if(!box) return;
+  const neg = r.negociacao;
+  if(!r.temOutras && !neg.temPrecoComb && !neg.temComissaoComb){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  let h = '<h3>Por linha de produto <span style="font-weight:400;color:var(--ink-soft);">(não aparece para o cliente)</span></h3>';
+  Object.values(r.linhas).forEach(L=>{
+    h += `<div class="conf-linha"><b>${LINHA_ICONE[L.linha]} ${esc(L.nome)}</b>
+      <div class="summary-row"><span class="lbl">${L.tipoLabel ? 'Tabela ' + esc(L.tipoLabel) + ' · ' : ''}${esc(L.termLabel)}</span><span>${fmtBRL(L.subNeg)}</span></div>
+      <div class="summary-row"><span class="lbl">Desconto de tabela ${fmtPct(L.desconto.desc)}${L.volume && L.volume.pct ? ' + volume ' + fmtPct(L.volume.pct) : ''}</span><span>Comissão ${fmtPct1(L.comissaoPct)}${L.comissaoCombinada?' (combinada)':''}: ${fmtBRL(L.comissao)}</span></div>
+      ${L.linha !== 'medicamentos' && L.frete > 0 ? `<div class="summary-row"><span class="lbl">Frete embutido</span><span>${fmtBRL(L.frete)}</span></div>` : ''}
+      ${L.codigos.length ? `<div class="summary-row"><span class="lbl">Código(s) para o pedido</span><span>${esc(L.codigos.join(' · '))}</span></div>` : ''}
+    </div>`;
+  });
+  r.avisos.forEach(a=>{ h += `<div class="info-note aviso-linha">⚠️ ${esc(a)}</div>`; });
+  if(neg.temPrecoComb || neg.temComissaoComb){
+    h += `<div class="info-note mt8"><b>Negociação especial:</b> ${neg.temPrecoComb ? r.items.filter(it=>it.combinado).length + ' produto(s) com preço combinado' : ''}${neg.temPrecoComb && neg.temComissaoComb ? ' · ' : ''}${neg.temComissaoComb ? 'comissão combinada' : ''}.
+      Combinado com: <b>${neg.aprovadoPor ? esc(neg.aprovadoPor) : '<span style="color:var(--danger,#b3201f);">não informado</span>'}</b>${neg.obs ? ' · ' + esc(neg.obs) : ''}</div>`;
+  }
+  box.innerHTML = h;
+}
+// Negociação especial: comissão combinada por linha e aprovação
+function renderNegociacaoComissoes(r, rebuild){
+  const nc = document.getElementById('negComissoes');
+  if(nc){
+    const chave = Object.keys(r.linhas).join(',');
+    if(rebuild || nc.dataset.k !== chave){
+      nc.dataset.k = chave;
+      const ls = Object.values(r.linhas);
+      nc.innerHTML = ls.length ? ls.map(L=>{
+        const tem = Object.prototype.hasOwnProperty.call(state.comissaoComb||{}, L.linha);
+        return `<div><label>${LINHA_ICONE[L.linha]} ${esc(L.nome)} — comissão combinada (%)</label>
+          <input type="text" inputmode="decimal" autocomplete="off" placeholder="pela escala: ${esc(fmtPct1(L.desconto.com))}" value="${tem ? esc(numeroTxtBR(state.comissaoComb[L.linha])) : ''}" onchange="setComissaoComb(${jsArg(L.linha)}, this.value)"></div>`;
+      }).join('') : '<div class="empty-state">Adicione produtos para combinar a comissão.</div>';
+    }
+  }
+  const ap = document.getElementById('negAprovadoPor'), ob = document.getElementById('negObs');
+  if(ap && document.activeElement !== ap) ap.value = state.negAprovadoPor || '';
+  if(ob && document.activeElement !== ob) ob.value = state.negObs || '';
+}
 
 const FAIXAS_FRETE = [
   {key:"f1", label:"0 a 1.499 Kg", min:0, max:1499},
@@ -1736,6 +2128,30 @@ function tabelaUsar(m, origem){
   TABELA_EM_USO = {id: m.id, nome: m.nome, versao: m.dados.versao, comum: m.comumVersao};
   return '';
 }
+// Sementes e Medicamentos: vêm como uma "tabela" à parte (id "linhas"), só para quem
+// tem essa tabela liberada no painel. Sem ela, o app fica só com a Nutrição.
+let LINHAS_EM_USO = '';
+function linhasDoPacote(cache, ids){
+  if(!cache || !cache.tabelas) return null;
+  const id = (Array.isArray(ids) ? ids : []).find(i => Object.prototype.hasOwnProperty.call(cache.tabelas, i) && cache.tabelas[i] && cache.tabelas[i].linhas && typeof cache.tabelas[i].linhas === 'object');
+  if(!id) return null;
+  const d = cache.tabelas[id].linhas;
+  return linhasValidar(d) ? null : d;
+}
+// Passa a usar as linhas do pacote. Devolve true se mudou algo.
+function pacoteAplicarLinhas(cache, ids){
+  const d = linhasDoPacote(cache, ids);
+  const v = d ? d.versao : '';
+  if(v === LINHAS_EM_USO && (!!d === !!LINHAS)) return false;
+  linhasAplicar(d);
+  LINHAS_EM_USO = v;
+  return true;
+}
+// Na abertura (depois de criado o orçamento em memória): linhas da cópia deste aparelho
+function pacoteLinhasIniciar(){
+  if(!SESSAO || SESSAO.trocarSenha) return;
+  try{ pacoteAplicarLinhas(pacoteLerCache(), SESSAO.rep.tabelas); }catch(e){}
+}
 // Ao abrir: usa já a cópia guardada neste aparelho (o acesso é conferido logo em seguida).
 (function(){
   if(!SESSAO || SESSAO.trocarSenha) return;
@@ -1808,7 +2224,7 @@ async function pacoteBuscar(timeoutMs){
   if(comumCompleto(cache.comum)) tenho.comum = cache.comum.versao;
   Object.keys(cache.tabelas).forEach(id=>{
     const t = cache.tabelas[id];
-    if(t && t.versao && Array.isArray(t.produtos)) tenho.tabelas[id] = t.versao;
+    if(t && t.versao && (Array.isArray(t.produtos) || (t.linhas && typeof t.linhas === 'object'))) tenho.tabelas[id] = t.versao;
   });
   const resp = await apiChamar('/api/pacote', {deviceId: CURRENT_DEVICE_ID, tenho}, SESSAO.token, timeoutMs);
   if(!resp) return {tipo:'indisponivel'};
@@ -1837,7 +2253,7 @@ function pacoteIncorporar(corpo, cache){
     if(!t || typeof t.id !== 'string' || !/^[a-z0-9-]{1,20}$/.test(t.id)) continue;
     if(t.inalterado){
       const meu = Object.prototype.hasOwnProperty.call(cache.tabelas, t.id) ? cache.tabelas[t.id] : null;
-      if(!meu || meu.versao !== t.versao || !Array.isArray(meu.produtos)) return null;
+      if(!meu || meu.versao !== t.versao || !(Array.isArray(meu.produtos) || (meu.linhas && typeof meu.linhas === 'object'))) return null;
       novo.tabelas[t.id] = meu;
     } else novo.tabelas[t.id] = t;
   }
@@ -1872,6 +2288,7 @@ function sessaoSincronizar(timeoutMs){
 // Passa a usar a tabela do pacote recebido (se mudou). Devolve o que aconteceu.
 function pacoteAplicarTabela(novo, ids){
   const agora = new Date().toLocaleString('pt-BR');
+  const linhasMudou = pacoteAplicarLinhas(novo, ids); // antes da tabela: o orçamento em andamento não perde sementes/medicamentos
   const m = tabelaDoPacote(novo, ids);
   if(!m){
     const tinha = PRODUCTS.length > 0;
@@ -1883,6 +2300,11 @@ function pacoteAplicarTabela(novo, ids){
     return tinha ? 'retirada' : 'sem-tabela';
   }
   if(m.id === TABELA_EM_USO.id && m.dados.versao === TABELA_EM_USO.versao && m.comumVersao === TABELA_EM_USO.comum){
+    if(linhasMudou){
+      tabelaUltimoStatus = agora + ' — sementes e medicamentos atualizados';
+      tabelaRefreshUI();
+      return 'atualizada';
+    }
     tabelaUltimoStatus = agora + ' — tabela já está atualizada';
     tabelaRenderRotulo();
     return 'atual';
@@ -1918,12 +2340,19 @@ let state = {
   descExtraAtivo: false,
   descExtraPct: 0,
   descExtraMap: {},
+  linhas: {},           // por linha (sementes, medicamentos): {tipo, term, descIdx, inseticida}
+  precoComb: {},        // negociação especial: preço combinado por produto {cod: R$} (sementes: R$/kg)
+  comissaoComb: {},     // negociação especial: comissão combinada por linha {linha: %}
+  negAprovadoPor: '', negObs: '',
+  catLinha: 'nutricao', // linha aberta no catálogo
   custoAnimal: {incluir:false, linhas:{}}, // custo por animal/dia (opcional, por orçamento)
   protocolo: protocoloPadrao(), // protocolo nutricional no PDF (opcional, vários lotes)
   incluirConsumo: true,  // inclui "consumo recomendado" no PDF/WhatsApp quando o produto tiver esse dado cadastrado
   history: [],          // orçamentos salvos (persistido neste aparelho)
   codigoAtual: null      // número do orçamento em edição (definido ao gerar PDF/WhatsApp)
 };
+linhasAplicar(LINHAS_DATA);
+pacoteLinhasIniciar();
 
 /* =====================================================================
    PERSISTÊNCIA DO HISTÓRICO (salvo neste aparelho, entre sessões)
@@ -2208,7 +2637,7 @@ function urlSegura(u){ return /^https?:\/\//i.test(String(u || '').trim()) ? Str
 function fmtBRL(v){
   return (v||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 }
-function findProduct(cod){ return PRODUCTS.find(p=>p.cod===cod); }
+function findProduct(cod){ return PRODUCTS.find(p=>p.cod===cod) || linhaProduto(cod); }
 
 /* =====================================================================
    IDENTIDADE VISUAL — aplica nome, cor e logo da empresa (BRANDING) em toda a interface
@@ -2322,7 +2751,7 @@ function applyBranding(){
 /* =====================================================================
    NAVEGAÇÃO
    ===================================================================== */
-const viewNames = {catalogo:"Catálogo", rapido:"Orçamento rápido", orcamento:"Orçamento", descontoextra:"Desconto Extra", custoanimal:"Custo Animal/Dia", conferencia:"Conferência", historico:"Histórico", desempenho:"Meu Desempenho"};
+const viewNames = {catalogo:"Catálogo", rapido:"Orçamento rápido", orcamento:"Orçamento", descontoextra:"Negociação Especial", custoanimal:"Custo Animal/Dia", conferencia:"Conferência", historico:"Histórico", desempenho:"Meu Desempenho"};
 function showView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
@@ -2374,7 +2803,8 @@ function renderCatalog(){
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
   const cf = catFilter.value;
   const wrap = document.getElementById('catalogList');
-  let filtered = PRODUCTS.filter(p=>{
+  renderLinhaTabs();
+  let filtered = catalogoProdutos().filter(p=>{
     const matchQ = !q || p.nome.toLowerCase().includes(q) || p.cod.toLowerCase().includes(q);
     const matchC = !cf || p.cat===cf;
     return matchQ && matchC;
@@ -2418,16 +2848,17 @@ function buildCatalogHtml(filtered, vendas){
       <div class="prod-card">
         <div class="prod-main">
           <div class="prod-name">${esc(p.nome)}${isMaisVendido?' <span class="tag-maisvendido">🔥 Mais vendido</span>':''}</div>
-          <div class="prod-meta">Código ${esc(p.cod)} · Saco ${p.peso} Kg${inCart?` · <span style="color:var(--ok);font-weight:700;">${inCart.qty} no orçamento</span>`:''}</div>
+          <div class="prod-meta">Código ${esc(p.cod)} · ${p.linha ? esc(detalheProduto(p)) : 'Saco '+p.peso+' Kg'}${inCart?` · <span style="color:var(--ok);font-weight:700;">${p.linha ? esc(unidadeQtd(p, inCart.qty)) : inCart.qty} no orçamento</span>`:''}</div>
+          ${p.linha==='sementes' && kgHaMax(p.kgha) ? `<div class="ha-box">Área <input type="text" inputmode="decimal" autocomplete="off" placeholder="ha" id="ha-${esc(p.cod)}" oninput="calcHa(${jsArg(p.cod)})"> ha → calcula os sacos</div><div class="ha-info" id="haInfo-${esc(p.cod)}"></div>` : ''}
         </div>
         <div class="prod-prices">
-          <div>À Vista<br><b>${fmtBRL(p.vista)}</b></div>
-          <div>30 DF<br><b>${fmtBRL(p.d30)}</b></div>
-          <div>30/60<br><b>${fmtBRL(p.d3060)}</b></div>
-          <div>30/60/90<br><b>${fmtBRL(p.d306090)}</b></div>
+          <div>À Vista<br><b>${fmtBRL(p.linha ? precoMostrar(p,'vista') : p.vista)}</b></div>
+          <div>30 DF<br><b>${fmtBRL(p.linha ? precoMostrar(p,'d30') : p.d30)}</b></div>
+          <div>30/60<br><b>${fmtBRL(p.linha ? precoMostrar(p,'d3060') : p.d3060)}</b></div>
+          <div>30/60/90<br><b>${fmtBRL(p.linha ? precoMostrar(p,'d306090') : p.d306090)}</b></div>
         </div>
         <div class="prod-add">
-          <input type="number" class="qty-input" min="1" value="${inCart?inCart.qty:1}" id="qty-${esc(p.cod)}">
+          <input type="number" class="qty-input" min="1" value="${inCart?inCart.qty:1}" id="qty-${esc(p.cod)}" title="${p.linha==='sementes'?'Sacos':(p.linha==='medicamentos'?'Frascos':'Sacos')}">
           <button class="btn btn-primary btn-sm" onclick="addToCart(${jsArg(p.cod)})">${inCart?'Atualizar':'+ Adicionar'}</button>
         </div>
       </div>`;
@@ -2493,6 +2924,8 @@ descExtraCheck.addEventListener('change', e=>{
 descExtraInput.addEventListener('input', e=>{
   state.descExtraPct = parseFloat(e.target.value)||0;
 });
+document.getElementById('negAprovadoPor').addEventListener('input', e=>{ state.negAprovadoPor = e.target.value; renderDescontoExtra(false); agendarRascunho(); });
+document.getElementById('negObs').addEventListener('input', e=>{ state.negObs = e.target.value; agendarRascunho(); });
 document.getElementById('descExtraAplicarTodos').addEventListener('click', ()=>{
   const v = Math.min(30, Math.max(0, parseFloat(descExtraInput.value)||0));
   state.descExtraMap = {};
@@ -2559,7 +2992,7 @@ function descricaoConsumoCusto(d){
 // Linhas que entram no PDF/WhatsApp (vazio se o vendedor não ligou a chave)
 function custoAnimalLinhasParaDocumento(r){
   if(!state.custoAnimal.incluir) return [];
-  return r.items.map(custoLinhaDados).filter(Boolean);
+  return r.items.filter(it=>it.linha==='nutricao').map(custoLinhaDados).filter(Boolean);
 }
 function custoResultadoHtml(it){
   const L = getLinhaCusto(it.p.cod);
@@ -2598,7 +3031,7 @@ function renderCustoAnimal(){
     return;
   }
   const r = calcOrcamento();
-  wrap.innerHTML = r.items.map(it=>{
+  wrap.innerHTML = r.items.filter(it=>it.linha==='nutricao').map(it=>{
     const L = getLinhaCusto(it.p.cod);
     const cod = it.p.cod;
     const dica = it.p.consumo ? `Consumo recomendado pelo fabricante: ${esc(it.p.consumo)}` : 'Este produto não tem consumo cadastrado — informe o consumo que você vai recomendar.';
@@ -2676,6 +3109,7 @@ function protocoloMigrar(p){
 function protoProdutosDoLote(lote, r, nLotes){
   const out = [];
   r.items.forEach(it=>{
+    if(it.linha!=='nutricao') return;
     const L = getLinhaCusto(it.p.cod);
     if(!L || L.incluir===false || !(Number(L.consumo)>0)) return;
     if(lote.prod===null || lote.prod===undefined){ if(nLotes>1) return; }
@@ -3128,11 +3562,23 @@ async function desenharPropostaPdf(doc, cli, r, termLabel){
   y += 21;
 
   secao('Itens da proposta');
+  if(r.temOutras){
+    const rowsL = [];
+    Object.values(r.linhas).forEach(L=>{
+      rowsL.push({c:[L.nome + '  ·  ' + L.termLabel, '', '', ''], bold:true, fundo:corClara});
+      r.items.filter(it=>it.linha===L.linha).forEach(it=>rowsL.push({
+        c:[it.p.nome + (it.inseticida ? ' (com inseticida)' : ''), unidadeQtd(it.p, it.qty), precoUnitTxt(it.p, it.precoFinal), fmtBRL(it.subFinal)],
+        sub: it.linha==='nutricao' ? ((state.incluirConsumo && it.p.consumo) ? 'Consumo recomendado: '+it.p.consumo : null) : (detalheProduto(it.p) || null)
+      }));
+    });
+    tabela([{t:'Produto',w:80},{t:'Quantidade',w:30,a:'r'},{t:'Preço unitário',w:32,a:'r'},{t:'Subtotal',w:36,a:'r'}], rowsL, 9);
+  } else {
   const rowsIt = r.items.map(it=>({
     c:[it.p.nome, fmtNum(it.qty), fmtBRL(it.precoFinal), fmtBRL(it.subFinal)],
     sub: (state.incluirConsumo && it.p.consumo) ? 'Consumo recomendado: '+it.p.consumo : null
   }));
   tabela([{t:'Produto',w:86},{t:'Sacos',w:20,a:'r'},{t:'Preço por saco',w:36,a:'r'},{t:'Subtotal',w:36,a:'r'}], rowsIt, 9);
+  }
 
   // Total — aparece uma única vez
   ensure(24);
@@ -3140,7 +3586,7 @@ async function desenharPropostaPdf(doc, cli, r, termLabel){
   doc.setFillColor(...corClara); doc.roundedRect(M,y,CW,19,2,2,'F');
   doc.setFillColor(...cor); doc.rect(M,y,1.6,19,'F');
   rotulo('Total da proposta', M+7, y+6.8, null, corEsc);
-  fonte(8.2,'normal',SOFT); T(fmtNum(nSacos)+' sacos  ·  '+termLabel+(r.comFrete?'  ·  frete incluso':(r.retirada?'  ·  retirada pelo cliente na fábrica':'')), M+7, y+13.2);
+  fonte(8.2,'normal',SOFT); T((r.temOutras ? r.items.length+' itens  ·  condições por linha' : fmtNum(nSacos)+' sacos  ·  '+termLabel)+(r.comFrete?'  ·  frete incluso':(r.retirada?'  ·  retirada pelo cliente na fábrica':'')), M+7, y+13.2);
   const totTxt = fmtBRL(r.totalCliente);
   const tamTot = caber(totTxt,21,'bold',84); fonte(tamTot,'bold',corEsc); T(totTxt, M+CW-6, y+13.4, {align:'right'});
   y += 26;
@@ -3409,14 +3855,18 @@ function renderDescontoExtra(rebuild){
     if(!r.items.length){
       tb.innerHTML = '<tr><td style="padding:8px;color:var(--ink-soft);">Adicione produtos na aba Orçamento para definir o desconto de cada um.</td></tr>';
     } else {
-      let h = '<tr><th>Produto</th><th>Qtd</th><th>Desconto extra (%)</th><th>Preço final/saco</th></tr>';
+      let h = '<tr><th>Produto</th><th>Qtd</th><th>Desconto extra (%)</th><th>Preço combinado</th><th>Preço final</th></tr>';
       r.items.forEach(it=>{
         const cod = String(it.p.cod);
+        const un = it.linha==='sementes' ? 'R$/kg' : (it.linha==='medicamentos' ? 'R$/frasco' : 'R$/saco');
+        const temComb = Object.prototype.hasOwnProperty.call(state.precoComb||{}, cod);
+        const ext = Math.min(30, Math.max(0, Number((state.descExtraMap||{})[cod])||0));
         h += `<tr>
-          <td>${esc(it.p.nome)}</td>
+          <td>${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' ' : ''}${esc(it.p.nome)}</td>
           <td>${Number(it.qty)}</td>
-          <td><input type="number" min="0" max="30" step="0.5" inputmode="decimal" style="width:90px;" value="${it.descExtra||0}" oninput="setDescExtraItem(${jsArg(cod)}, this.value)"></td>
-          <td id="descExtraPreco_${esc(cod)}">${fmtBRL(it.precoNeg)}</td>
+          <td><input type="number" min="0" max="30" step="0.5" inputmode="decimal" style="width:64px;" value="${ext}" oninput="setDescExtraItem(${jsArg(cod)}, this.value)"></td>
+          <td><input type="text" inputmode="decimal" autocomplete="off" style="width:84px;" placeholder="${un}" value="${temComb ? esc(numeroTxtBR(state.precoComb[cod])) : ''}" onchange="setPrecoComb(${jsArg(cod)}, this.value)"></td>
+          <td id="descExtraPreco_${esc(cod)}">${it.linha==='nutricao' ? fmtBRL(it.precoNeg) : esc(precoUnitTxt(it.p, it.precoNeg))}</td>
         </tr>`;
       });
       tb.innerHTML = h;
@@ -3424,7 +3874,7 @@ function renderDescontoExtra(rebuild){
   } else {
     r.items.forEach(it=>{
       const el = document.getElementById('descExtraPreco_'+String(it.p.cod));
-      if(el) el.textContent = fmtBRL(it.precoNeg);
+      if(el) el.textContent = it.linha==='nutricao' ? fmtBRL(it.precoNeg) : precoUnitTxt(it.p, it.precoNeg);
     });
   }
 
@@ -3435,10 +3885,18 @@ function renderDescontoExtra(rebuild){
     ? `em ${nExtra} de ${r.items.length} produto(s) — ${r.descExtraPct.toFixed(2).replace('.',',')}% sobre o total`
     : '0%';
   document.getElementById('descExtraTotalProduto').textContent = fmtBRL(r.totalProduto);
-  document.getElementById('descExtraComissao').textContent = fmtBRL(r.comissaoValor) + ` (${d.com.toFixed(1).replace('.',',')}%)`;
+  document.getElementById('descExtraComissao').textContent = fmtBRL(r.comissaoValor) + ` (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : d.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})`;
+  renderNegociacaoComissoes(r, rebuild);
 
   const alerta = document.getElementById('descExtraAlerta');
-  if(state.descExtraAtivo && nExtra > 0){
+  const pendNeg = state.descExtraAtivo ? negociacaoPendente(r) : '';
+  if(pendNeg){
+    alerta.style.display = '';
+    alerta.textContent = pendNeg;
+  } else if(state.descExtraAtivo && (r.negociacao.temPrecoComb || r.negociacao.temComissaoComb)){
+    alerta.style.display = '';
+    alerta.textContent = `Negociação especial registrada: combinado com ${r.negociacao.aprovadoPor}. Preço combinado e comissão combinada ficam no histórico e na Conferência (uso interno).`;
+  } else if(state.descExtraAtivo && nExtra > 0){
     alerta.style.display = '';
     alerta.textContent = `Atenção: o desconto extra vale só para os produtos marcados acima (${nExtra} de ${r.items.length}) e é aplicado separadamente, por cima do desconto de tabela (${d.desc.toFixed(2).replace('.',',')}%) — os dois não se somam, são descontos em sequência. Como a comissão de ${d.com.toFixed(1).replace('.',',')}% incide sobre o valor final já negociado, o desconto extra também reduz a comissão do vendedor. Negociação especial — confirme a necessidade de aprovação com a gestão antes de fechar o pedido.`;
   } else {
@@ -3636,45 +4094,69 @@ function freteUnitPorItem(it, totalNegociado){
 
 function calcOrcamento(){
   const d = DESCONTOS[state.descIdx];
-  const extraDe = cod => state.descExtraAtivo ? Math.min(30, Math.max(0, Number((state.descExtraMap||{})[cod])||0)) : 0;
+  const negAtiva = !!state.descExtraAtivo;
+  const extraDe = cod => negAtiva ? Math.min(30, Math.max(0, Number((state.descExtraMap||{})[cod])||0)) : 0;
+  const combDe = cod => { if(!negAtiva) return null; const v = Number((state.precoComb||{})[cod]); return isFinite(v) && v > 0 ? v : null; };
   // Os dois descontos são SEPARADOS (aplicados em sequência), não somados:
   // valor negociado = preço x (1 - desconto tabela) x (1 - desconto extra)
-  const fatorTabela = 1 - (d.desc/100);
+  // Nas sementes Revenda entra ainda o desconto por volume (não mexe na comissão).
+  // Preço combinado (negociação especial) substitui o valor negociado do produto.
+  const ctx = {nutricao: {desconto: d, fator: 1 - (d.desc/100)}};
+  linhasAtivas().forEach(l=>{ const dl = linhaDesconto(l); ctx[l] = {desconto: dl, fator: 1 - (dl.desc/100), term: linhaCfg(l).term}; });
+
+  // kg de sementes do pedido (faixa de frete e desconto por volume das sementes)
+  let kgSementes = 0;
+  state.cart.forEach(c=>{ const p = findProduct(c.cod); if(p && p.linha === 'sementes') kgSementes += p.peso*c.qty; });
+  const vol = ctx.sementes ? sementesVolume(kgSementes) : {pct:0, codigo:''};
 
   let subtotal = 0;              // valor de tabela, sem nenhum desconto
   let subtotalComDescTabela = 0; // só com o desconto de tabela
-  let totalSacos = 0;
+  let totalSacos = 0;            // sacos da Nutrição
   const items = state.cart.map(c=>{
     const p = findProduct(c.cod);
-    const preco = precoItem(p);                     // preço de tabela na condição escolhida (padrão ou prazo especial), automático
+    const linha = linhaDoItem(p);
+    const cx = ctx[linha] || ctx.nutricao;
+    let preco = linha === 'nutricao' ? precoItem(p) : p[cx.term];  // preço de tabela na condição da linha
+    const inseticida = linha === 'sementes' && !!p.incrustada && sementesInseticida(p.cod);
+    if(inseticida) preco += (LINHAS.sementes.inseticidaKg || 0) * p.peso;
     const sub = preco * c.qty;
-    const precoTabela = preco * fatorTabela;         // preço só com desconto de tabela
-    const descExtraItem = extraDe(c.cod);            // desconto extra só deste produto (0 = sem extra)
-    const precoNeg = precoTabela * (1 - descExtraItem/100); // preço final negociado (tabela x extra do produto) — é o que o cliente vê
+    const precoTabela = preco * cx.fator;            // preço só com desconto de tabela
+    const volPct = linha === 'sementes' ? vol.pct : 0;
+    const precoVol = volPct ? precoTabela * (1 - volPct/100) : precoTabela;
+    const comb = combDe(c.cod);
+    const descExtraItem = comb != null ? 0 : extraDe(c.cod); // desconto extra só deste produto (0 = sem extra)
+    const precoNeg = comb != null ? (linha === 'sementes' ? comb * p.peso : comb)
+      : precoVol * (1 - descExtraItem/100);           // preço final negociado — é o que o cliente vê
     const subNeg = precoNeg * c.qty;
     subtotal += sub;
     subtotalComDescTabela += precoTabela * c.qty;
-    totalSacos += c.qty;
-    return {p, qty:c.qty, preco, sub, precoNeg, subNeg, descExtra:descExtraItem};
+    if(linha === 'nutricao') totalSacos += c.qty;
+    return {p, linha, qty:c.qty, preco, sub, precoNeg, subNeg, descExtra:descExtraItem, volPct, combinado: comb != null, precoComb: comb, inseticida};
   });
 
-  const subtotalComDesconto = items.reduce((t,it)=>t + it.subNeg, 0); // valor negociado final (tabela x extra)
+  const subtotalComDesconto = items.reduce((t,it)=>t + it.subNeg, 0); // valor negociado final
   const descontoTabelaValor = subtotal - subtotalComDescTabela;
   const descontoExtraValor = subtotalComDescTabela - subtotalComDesconto;
   const descontoValor = subtotal - subtotalComDesconto; // desconto total em R$ (informativo)
-  // % efetivo combinado, só para exibição (os descontos continuam aplicados separados no cálculo acima)
-  const descExtraPct = subtotalComDescTabela>0 ? (descontoExtraValor/subtotalComDescTabela)*100 : 0; // % efetivo do extra sobre o total
+  const descExtraPct = subtotalComDescTabela>0 ? (descontoExtraValor/subtotalComDescTabela)*100 : 0;
   const descEfetivoPct = subtotal>0 ? (descontoValor/subtotal)*100 : d.desc;
 
-  const pesoTotalKg = items.reduce((t,it)=>t + it.p.peso*it.qty, 0);
+  const itNutri = items.filter(it=>it.linha === 'nutricao');
+  const itSem = items.filter(it=>it.linha === 'sementes');
+  const itFrete = items.filter(it=>it.linha !== 'medicamentos'); // medicamentos: sem frete
+  const pesoTotalKg = itNutri.reduce((t,it)=>t + it.p.peso*it.qty, 0); // peso da Nutrição (faixa de frete e meta em toneladas)
   if(state.freteFaixaAuto){
     state.freteFaixaKey = faixaSugerida(pesoTotalKg);
   }
+  const faixaSementes = faixaSugerida(kgSementes);
+  if(ctx.sementes) linhaCfg('sementes').faixaKey = faixaSementes;
+  const kgFreteSem = state.freteModo === 'tabela' ? freteSementesKg(faixaSementes) : 0;
 
   let frete = 0;
-  if(state.freteModo === 'tabela') frete = freteTabelaPorItem(items);
-  else if(state.freteModo === 'saco') frete = items.reduce((t,it)=>t + freteManualSaco(it.p.cod)*it.qty, 0);
-  else if(state.freteModo === 'fixo') frete = state.freteValor;
+  if(state.freteModo === 'tabela') frete = freteTabelaPorItem(itNutri) + itSem.reduce((t,it)=>t + kgFreteSem*it.p.peso*it.qty, 0);
+  else if(state.freteModo === 'saco') frete = itNutri.reduce((t,it)=>t + freteManualSaco(it.p.cod)*it.qty, 0)
+    + itSem.reduce((t,it)=>t + freteManualSementes(it.p.cod, it.p.peso)*it.qty, 0);
+  else if(state.freteModo === 'fixo') frete = itFrete.length ? state.freteValor : 0;
 
   const totalProduto = subtotalComDesconto;          // valor negociado dos produtos, sem frete
   const totalComFrete = subtotalComDesconto + frete;  // valor final: produto + frete
@@ -3682,24 +4164,70 @@ function calcOrcamento(){
 
   // Se o cliente optar por entrega, o frete é embutido no preço unitário/total de cada produto
   // (o valor que aparece no orçamento e no PDF/WhatsApp já sai "tudo incluso", sem linha separada de frete).
+  const baseRateio = itFrete.reduce((t,it)=>t + it.subNeg, 0);
   items.forEach(it=>{
-    const freteUnit = comFrete ? freteUnitPorItem(it, subtotalComDesconto) : 0;
+    let freteUnit = 0;
+    if(comFrete && it.linha === 'nutricao') freteUnit = freteUnitPorItem(it, baseRateio);
+    else if(comFrete && it.linha === 'sementes'){
+      if(state.freteModo === 'tabela') freteUnit = kgFreteSem * it.p.peso;
+      else if(state.freteModo === 'saco') freteUnit = freteManualSementes(it.p.cod, it.p.peso);
+      else if(state.freteModo === 'fixo' && baseRateio > 0 && it.qty > 0) freteUnit = (state.freteValor||0) * (it.subNeg/baseRateio) / it.qty;
+    }
     it.freteUnit = freteUnit;
     it.precoFinal = it.precoNeg + freteUnit;
     it.subFinal = it.precoFinal * it.qty;
   });
 
-  // Comissão do vendedor: sempre em cima do valor negociado dos produtos (após tabela + extra), sem o frete
-  const comissaoValor = totalProduto * (d.com/100);
+  // Comissão do vendedor: em cima do valor negociado de cada linha, sem o frete,
+  // pela escala da linha ou pela comissão combinada (negociação especial)
+  const linhas = {};
+  ['nutricao'].concat(LINHA_IDS).forEach(l=>{
+    const its = items.filter(it=>it.linha === l);
+    if(!its.length) return;
+    const cx = ctx[l] || ctx.nutricao;
+    const combV = negAtiva ? Number((state.comissaoComb||{})[l]) : NaN;
+    const comissaoCombinada = negAtiva && state.comissaoComb && Object.prototype.hasOwnProperty.call(state.comissaoComb, l) && isFinite(combV) && combV >= 0;
+    const comissaoPct = comissaoCombinada ? combV : cx.desconto.com;
+    const subNeg = its.reduce((t,it)=>t + it.subNeg, 0);
+    linhas[l] = {
+      linha: l, nome: linhaNome(l), itens: its.length, desconto: cx.desconto, comissaoPct, comissaoCombinada,
+      sub: its.reduce((t,it)=>t + it.sub, 0), subNeg, comissao: subNeg * (comissaoPct/100),
+      frete: its.reduce((t,it)=>t + (it.freteUnit||0)*it.qty, 0),
+      kg: its.reduce((t,it)=>t + (it.p.peso||0)*it.qty, 0),
+      qtd: its.reduce((t,it)=>t + it.qty, 0),
+      tipo: l === 'nutricao' ? '' : linhaTipo(l),
+      tipoLabel: l === 'nutricao' ? '' : linhaTipoInfo(l).label,
+      termLabel: l === 'nutricao' ? termInfo().label : linhaPrazoLabel(l),
+      faixa: l === 'sementes' ? faixaSementes : (l === 'nutricao' ? state.freteFaixaKey : ''),
+      volume: l === 'sementes' ? vol : null,
+      codigos: []
+    };
+    if(l !== 'nutricao'){
+      const tp = linhaTipoInfo(l);
+      if(tp.codigo) linhas[l].codigos.push(tp.codigo);
+      if(l === 'sementes' && vol.codigo) linhas[l].codigos.push(vol.codigo);
+    }
+  });
+  const temOutras = items.some(it=>it.linha !== 'nutricao');
+  const comissaoValor = temOutras
+    ? Object.values(linhas).reduce((t,L)=>t + L.comissao, 0)
+    : (linhas.nutricao ? linhas.nutricao.comissao : 0);
+  const comissaoPctEfetivo = temOutras ? (totalProduto > 0 ? comissaoValor/totalProduto*100 : 0) : (linhas.nutricao ? linhas.nutricao.comissaoPct : d.com);
 
   const totalCliente = comFrete ? totalComFrete : totalProduto; // o que efetivamente vai para o cliente
 
-  return {
+  const r = {
     items, subtotal, subtotalComDescTabela, descontoTabelaValor, descontoExtraValor, descontoValor, descEfetivoPct,
     subtotalComDesconto, frete, totalProduto, totalComFrete, comFrete, totalCliente,
     comissaoValor, desconto:d, descExtraPct, totalSacos, pesoTotalKg,
-    retirada: state.freteModo === 'retira' 
+    retirada: state.freteModo === 'retira',
+    linhas, temOutras, comissaoPctEfetivo, kgSementes,
+    negociacao: {ativa: negAtiva, temPrecoComb: items.some(it=>it.combinado),
+      temComissaoComb: Object.values(linhas).some(L=>L.comissaoCombinada),
+      aprovadoPor: String(state.negAprovadoPor||'').trim(), obs: String(state.negObs||'').trim()}
   };
+  r.avisos = temOutras ? LINHA_IDS.flatMap(l=>avisosLinha(l, r)) : [];
+  return r;
 }
 
 function renderOrcamento(){
@@ -3715,11 +4243,12 @@ function renderOrcamento(){
       <div class="cart-item">
         <div>
           <div class="ci-name">${esc(it.p.nome)}</div>
-          <div class="ci-code">${it.p.peso} Kg${r.comFrete?' · frete incluso':''}</div>
-          ${state.freteModo==='saco' ? `<label class="ci-code" style="display:flex;align-items:center;gap:6px;margin-top:4px;">Frete R$/saco
+          <div class="ci-code">${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' '+esc(detalheProduto(it.p))+' · '+esc(precoUnitTxt(it.p, it.precoFinal)) : it.p.peso+' Kg'}${r.comFrete && it.linha!=='medicamentos'?' · frete incluso':''}${it.combinado?' · preço combinado':''}</div>
+          ${it.linha==='sementes' && it.p.incrustada ? `<label class="ci-code" style="display:flex;align-items:center;gap:6px;margin-top:4px;"><input type="checkbox" style="width:15px;height:15px;" ${it.inseticida?'checked':''} onchange="setInseticida(${jsArg(it.p.cod)}, this.checked)"> Tratada com inseticida (+${fmtBRL(LINHAS.sementes.inseticidaKg||0)}/kg)</label>` : ''}
+          ${state.freteModo==='saco' && it.linha!=='medicamentos' ? `<label class="ci-code" style="display:flex;align-items:center;gap:6px;margin-top:4px;">Frete R$/saco
             <input type="text" class="ci-frete" inputmode="decimal" autocomplete="off" style="width:90px;padding:4px 6px;"
               value="${Object.prototype.hasOwnProperty.call(state.freteItem||{}, it.p.cod) ? numeroTxtBR(state.freteItem[it.p.cod]) : ''}"
-              placeholder="${numeroTxtBR(state.freteValor)}" onchange="setFreteItem(${jsArg(it.p.cod)}, this.value)"></label>` : ''}
+              placeholder="${numeroTxtBR(it.linha==='sementes' ? (Number(state.freteValor)||0)/25*it.p.peso : state.freteValor)}" onchange="setFreteItem(${jsArg(it.p.cod)}, this.value)"></label>` : ''}
         </div>
         <input type="number" class="qty-input ci-qty" min="1" value="${it.qty}" onchange="updateQty(${jsArg(it.p.cod)}, this.value)">
         <div class="ci-sub">${fmtBRL(it.subFinal)}</div>
@@ -3745,9 +4274,11 @@ function renderOrcamento(){
   { const fv = document.getElementById('freteValor'); if(document.activeElement !== fv) fv.value = numeroTxtBR(state.freteValor); }
   freteCidadeSel.value = state.freteCidade;
   freteFaixaSel.value = state.freteFaixaKey;
-  document.getElementById('comissaoView').value = `${r.desconto.com.toFixed(1).replace('.',',')}% (${fmtBRL(r.comissaoValor)})`;
+  { const Ln = r.linhas.nutricao;
+    document.getElementById('comissaoView').value = `${(Ln ? Ln.comissaoPct : r.desconto.com).toFixed(1).replace('.',',')}%${Ln && Ln.comissaoCombinada ? ' combinada' : ''} (${fmtBRL(r.temOutras ? (Ln ? Ln.comissao : 0) : r.comissaoValor)})`; }
   document.getElementById('fretePesoView').value = `${r.pesoTotalKg.toLocaleString('pt-BR')} Kg`;
   document.getElementById('freteTotalView').value = fmtBRL(r.frete);
+  renderLinhasConfig(r);
   agendarRascunho();
 }
 
@@ -3761,7 +4292,7 @@ function renderConferencia(){
     <div class="summary-row"><span class="lbl">Cliente</span><span>${esc(cli.nome)}</span></div>
     ${cli.cidade?`<div class="summary-row"><span class="lbl">Cidade</span><span>${esc(cli.cidade)}</span></div>`:''}
     <div class="summary-row"><span class="lbl">Vendedor</span><span>${esc(cli.vendedor)}</span></div>
-    <div class="summary-row"><span class="lbl">Condição de pagamento</span><span>${esc(termLabel)}</span></div>
+    <div class="summary-row"><span class="lbl">Condição de pagamento</span><span>${r.temOutras ? 'por linha de produto (veja abaixo)' : esc(termLabel)}</span></div>
     <div class="summary-row"><span class="lbl">Itens</span><span>${r.items.length} produto(s)</span></div>
   `;
 
@@ -3769,19 +4300,13 @@ function renderConferencia(){
   document.getElementById('confItensTable').innerHTML = `
     <table class="sim-table">
       <tr><th style="text-align:left;">Produto</th><th>Qtd</th><th>Valor unitário</th><th>Total</th></tr>
-      ${r.items.map(it=>`
-        <tr>
-          <td style="text-align:left;">${esc(it.p.nome)}</td>
-          <td>${it.qty}</td>
-          <td>${fmtBRL(it.precoFinal)}</td>
-          <td>${fmtBRL(it.subFinal)}</td>
-        </tr>`).join('')}
+      ${confItensRows(r)}
     </table>
   `;
   const freteAviso = document.getElementById('confFreteAviso');
   if(r.comFrete){
     freteAviso.style.display = '';
-    freteAviso.textContent = `Valores acima já incluem o frete para ${state.freteCidade} (entrega). Nenhuma linha de frete separada aparece no PDF/WhatsApp.`;
+    freteAviso.textContent = `Valores acima já incluem o frete para ${state.freteCidade} (entrega). Nenhuma linha de frete separada aparece no PDF/WhatsApp.` + (r.linhas.medicamentos ? ' Medicamentos: sem frete.' : '');
   } else {
     freteAviso.style.display = '';
     freteAviso.textContent = r.retirada
@@ -3790,7 +4315,7 @@ function renderConferencia(){
   }
 
   const _nExtra = r.items.filter(it=>it.descExtra>0).length;
-  const descLabel = state.descExtraAtivo && _nExtra>0
+  const descLabel = r.temOutras ? `(${r.descEfetivoPct.toFixed(2).replace('.',',')}% efetivo, somando as linhas)` : state.descExtraAtivo && _nExtra>0
     ? `(tabela ${r.desconto.desc.toFixed(2).replace('.',',')}% + extra em ${_nExtra} de ${r.items.length} produto(s) — ${r.descEfetivoPct.toFixed(2).replace('.',',')}% efetivo)`
     : `(${r.desconto.desc.toFixed(2).replace('.',',')}%)`;
   document.getElementById('confSubtotal').textContent = fmtBRL(r.subtotal);
@@ -3802,7 +4327,8 @@ function renderConferencia(){
   document.getElementById('confTotalProduto2').textContent = fmtBRL(r.totalProduto);
   document.getElementById('confFrete').textContent = '+ ' + fmtBRL(r.frete);
   document.getElementById('confTotalComFrete').textContent = fmtBRL(r.totalComFrete);
-  document.getElementById('confComissao').textContent = fmtBRL(r.comissaoValor) + ` (${r.desconto.com.toFixed(1).replace('.',',')}%)`;
+  document.getElementById('confComissao').textContent = fmtBRL(r.comissaoValor) + ` (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})`;
+  renderConfLinhas(r);
 }
 function updateQty(cod, val){
   let qty = parseInt(val,10);
@@ -3831,6 +4357,11 @@ document.getElementById('btnLimparTudo').addEventListener('click', ()=>{
     state.descExtraAtivo = false;
     state.descExtraPct = 0;
     state.descExtraMap = {};
+    state.linhas = {};
+    state.precoComb = {};
+    state.comissaoComb = {};
+    state.negAprovadoPor = '';
+    state.negObs = '';
     state.codigoAtual = null;
     state.retomadaDe = null;
     state.custoAnimal = {incluir:false, linhas:{}};
@@ -3896,10 +4427,19 @@ function quoteText(){
   lines.push(`Cliente: ${cli.nome}`);
   if(cli.cidade) lines.push(`Cidade: ${cli.cidade}`);
   lines.push(`Vendedor: ${cli.vendedor}`);
-  lines.push(`Condição: ${termLabel}`);
+  if(!r.temOutras) lines.push(`Condição: ${termLabel}`);
   lines.push('');
   lines.push('Itens:');
-  r.items.forEach(it=>{
+  if(r.temOutras){
+    Object.values(r.linhas).forEach((L, k)=>{
+      if(k) lines.push('');
+      lines.push(`*${L.nome}* — Condição: ${L.termLabel}`);
+      r.items.filter(it=>it.linha===L.linha).forEach(it=>{
+        lines.push(`• ${it.p.nome}${it.inseticida?' (com inseticida)':''} — Qtd: ${unidadeQtd(it.p, it.qty)} | Preço unit: ${precoUnitTxt(it.p, it.precoFinal)} | Subtotal: ${fmtBRL(it.subFinal)}`);
+        if(state.incluirConsumo && it.p.consumo) lines.push(`   Consumo recomendado: ${it.p.consumo}`);
+      });
+    });
+  } else r.items.forEach(it=>{
     lines.push(`• ${it.p.nome} — Qtd: ${it.qty} | Preço unit: ${fmtBRL(it.precoFinal)} | Subtotal: ${fmtBRL(it.subFinal)}`);
     if(state.incluirConsumo && it.p.consumo){
       lines.push(`   Consumo recomendado: ${it.p.consumo}`);
@@ -3940,6 +4480,7 @@ function quoteText(){
 
 document.getElementById('btnWhats').addEventListener('click', ()=>{
   if(state.cart.length===0){ toast('Adicione produtos antes de gerar o orçamento'); return; }
+  { const pend = negociacaoPendente(); if(pend){ toast(pend); return; } }
   const cli = clienteInfo();
   let phone = cli.tel.replace(/\D/g,'');
   // Sem telefone preenchido, o WhatsApp não sabe pra quem mandar e mostra só os
@@ -3964,6 +4505,7 @@ document.getElementById('btnWhats').addEventListener('click', ()=>{
 
 document.getElementById('btnPdf').addEventListener('click', async ()=>{
   if(state.cart.length===0){ toast('Adicione produtos antes de gerar o PDF'); return; }
+  { const pend = negociacaoPendente(); if(pend){ toast(pend); return; } }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const cli = clienteInfo();
@@ -4004,6 +4546,7 @@ document.getElementById('btnPdf').addEventListener('click', async ()=>{
 
 document.getElementById('btnSalvar').addEventListener('click', ()=>{
   if(state.cart.length===0){ toast('Adicione produtos antes de salvar'); return; }
+  { const pend = negociacaoPendente(); if(pend){ toast(pend); return; } }
   const cli = clienteInfo();
   const r = calcOrcamento();
   state.history.unshift({
@@ -4017,12 +4560,13 @@ document.getElementById('btnSalvar').addEventListener('click', ()=>{
     ciclo: (()=>{ const v = document.getElementById('cicloSelect').value; return CICLOS[v] ? v : cicloSugerido(r.totalComFrete); })(),
     cliente: cli,
     term: state.term,
-    itens: r.items.map(it=>({nome:it.p.nome, cod:it.p.cod, qty:it.qty, precoFinal:it.precoFinal, subFinal:it.subFinal, peso:it.p.peso})),
+    itens: r.items.map(it=>Object.assign({nome:it.p.nome, cod:it.p.cod, qty:it.qty, precoFinal:it.precoFinal, subFinal:it.subFinal, peso:it.p.peso},
+      it.linha!=='nutricao' ? {linha:it.linha, tipo:it.p.tipo} : {}, it.inseticida ? {inseticida:true} : {}, it.combinado ? {precoComb:it.precoComb} : {})),
     desconto: r.desconto,
     descExtraPct: r.descExtraPct,
     descExtraMap: Object.fromEntries(r.items.filter(it=>it.descExtra>0).map(it=>[it.p.cod, it.descExtra])),
     descEfetivoPct: r.descEfetivoPct,
-    comissaoPct: r.desconto.com,
+    comissaoPct: (r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com,
     frete: r.frete,
     comFrete: r.comFrete,
     freteModo: state.freteModo,
@@ -4033,6 +4577,15 @@ document.getElementById('btnSalvar').addEventListener('click', ()=>{
     total: r.totalComFrete,
     pesoTotalKg: r.pesoTotalKg,
     comissao: r.comissaoValor,
+    ...((r.temOutras || r.negociacao.temPrecoComb || r.negociacao.temComissaoComb) ? {
+      linhasCfg: limparLinhasCfg(state.linhas),
+      linhasResumo: Object.values(r.linhas).map(L=>({linha:L.linha, nome:L.nome, tipo:L.tipo, termo:L.termLabel, desc:L.desconto.desc,
+        comissaoPct:L.comissaoPct, comissaoCombinada:L.comissaoCombinada, valor:L.subNeg, comissao:L.comissao, kg:L.kg, codigos:L.codigos})),
+      pesoSementesKg: r.kgSementes,
+      precoComb: r.negociacao.temPrecoComb ? limparMapaNum(state.precoComb) : {},
+      comissaoComb: r.negociacao.temComissaoComb ? limparMapaNum(state.comissaoComb, 30) : {},
+      negAprovadoPor: r.negociacao.aprovadoPor, negObs: r.negociacao.obs
+    } : {}),
   });
   const novoId = state.history[0].id;
   if(state.retomadaDe){
@@ -4183,6 +4736,12 @@ function reabrirComoNovo(id){
   if(['tabela','saco','fixo','0','retira'].includes(h.freteModo)) state.freteModo = h.freteModo;
   if(h.freteValor != null) state.freteValor = Number(h.freteValor) || 0;
   state.freteItem = limparFreteItem(h.freteItem);
+  state.linhas = limparLinhasCfg(h.linhasCfg);
+  state.precoComb = limparMapaNum(h.precoComb);
+  state.comissaoComb = limparMapaNum(h.comissaoComb, 30);
+  state.negAprovadoPor = typeof h.negAprovadoPor === 'string' ? h.negAprovadoPor : '';
+  state.negObs = typeof h.negObs === 'string' ? h.negObs : '';
+  if(Object.keys(state.precoComb).length || Object.keys(state.comissaoComb).length) state.descExtraAtivo = true;
   state.retomadaDe = h.id;
   state.retomadaAntes = {total:h.total||0, itens:Object.fromEntries((h.itens||[]).map(it=>[it.cod,{nome:it.nome,preco:it.precoFinal}])), faltando, dataOrig:h.data, numero:h.numero};
 
@@ -4371,7 +4930,7 @@ function renderHistorico(){
     const extraPrazo = ['enviado','negociacao'].includes(status)
       ? (()=>{ const v = vencimentoRetorno(h); const atras = Date.now()>=v; return ` <span class="tag-prazo ${atras?'atrasado':''}">${textoPrazoRetorno(v)}</span>`; })() : '';
     const codigoTxt = formatarCodigo(h.numero);
-    const termLabel = TERMS.find(t=>t.key===h.term)?.label||'—';
+    const termLabel = (h.itens||[]).some(it=>it.linha) ? 'Condições por linha' : (TERMS.find(t=>t.key===h.term)?.label||'—');
     const itensHtml = (h.itens||[]).map(it=>`
       <div class="hist-detail-item">
         <span>${esc(it.nome)}</span><span>Qtd: ${esc(it.qty)}</span><span>${fmtBRL(it.precoFinal)}</span><span>${fmtBRL(it.subFinal)}</span>
@@ -4674,7 +5233,7 @@ async function fetchComTimeout(url, opts, timeoutMs){
 }
 
 function refreshCatFilterOptions(){
-  const cats2 = [...new Set(PRODUCTS.map(p=>p.cat))];
+  const cats2 = [...new Set(catalogoProdutos().map(p=>p.cat))];
   const cur = catFilter.value;
   catFilter.innerHTML = '<option value="">Todas as categorias</option>' + cats2.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
   catFilter.value = cats2.includes(cur) ? cur : '';
@@ -5209,6 +5768,8 @@ function salvarRascunho(){
       freteModo: state.freteModo, freteValor: state.freteValor, freteItem: state.freteItem, freteCidade: state.freteCidade,
       freteFaixaAuto: state.freteFaixaAuto, freteFaixaKey: state.freteFaixaKey,
       descExtraAtivo: state.descExtraAtivo, descExtraPct: state.descExtraPct, descExtraMap: state.descExtraMap,
+      linhas: state.linhas, precoComb: state.precoComb, comissaoComb: state.comissaoComb,
+      negAprovadoPor: state.negAprovadoPor, negObs: state.negObs, catLinha: state.catLinha,
       custoAnimal: state.custoAnimal, protocolo: state.protocolo, incluirConsumo: state.incluirConsumo,
       codigoAtual: state.codigoAtual, retomadaDe: state.retomadaDe || null, retomadaAntes: state.retomadaAntes || null,
       cliente
@@ -5246,6 +5807,12 @@ function restaurarRascunho(){
   state.descExtraAtivo = !!d.descExtraAtivo;
   state.descExtraPct = Number(d.descExtraPct) || 0;
   state.descExtraMap = (d.descExtraMap && typeof d.descExtraMap === 'object') ? Object.assign({}, d.descExtraMap) : {};
+  state.linhas = limparLinhasCfg(d.linhas);
+  state.precoComb = limparMapaNum(d.precoComb);
+  state.comissaoComb = limparMapaNum(d.comissaoComb, 30);
+  state.negAprovadoPor = typeof d.negAprovadoPor === 'string' ? d.negAprovadoPor : '';
+  state.negObs = typeof d.negObs === 'string' ? d.negObs : '';
+  state.catLinha = (d.catLinha === 'nutricao' || linhasAtivas().includes(d.catLinha)) ? d.catLinha : 'nutricao';
   if(d.custoAnimal && typeof d.custoAnimal === 'object') state.custoAnimal = d.custoAnimal;
   if(d.protocolo && typeof d.protocolo === 'object') state.protocolo = protocoloMigrar(d.protocolo);
   state.incluirConsumo = d.incluirConsumo !== false;
@@ -5313,7 +5880,7 @@ function rpRenderItens(){
   if(!r.items.length){ wrap.innerHTML = '<div class="empty-state">Nenhum produto ainda. Busque acima e toque em Adicionar.</div>'; return; }
   wrap.innerHTML = r.items.map(it=>`
     <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
-      <div style="flex:1;min-width:0;"><div style="font-weight:700;">${esc(it.p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${it.p.peso} Kg · ${fmtBRL(it.precoFinal)} o saco · <b>${fmtBRL(it.subFinal)}</b></div></div>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;">${esc(it.p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' '+esc(unidadeQtd(it.p, it.qty))+' · '+esc(precoUnitTxt(it.p, it.precoFinal)) : it.p.peso+' Kg · '+fmtBRL(it.precoFinal)+' o saco'} · <b>${fmtBRL(it.subFinal)}</b></div></div>
       <input type="number" class="qty-input" style="width:72px;" min="1" inputmode="numeric" value="${Number(it.qty)}" onchange="rpQtd(${jsArg(it.p.cod)}, this.value)" aria-label="Quantidade de sacos">
       <button class="remove-x" onclick="rpRemover(${jsArg(it.p.cod)})" title="Remover">✕</button>
     </div>`).join('');
@@ -5325,12 +5892,12 @@ function rpRenderResumo(){
   const linhaFrete = r.retirada ? 'Retirada na fábrica — sem frete'
     : r.comFrete ? (state.freteModo==='tabela' ? `Frete para ${esc(state.freteCidade)}: ${fmtBRL(r.frete)} (já incluso no preço)` : `Frete manual: ${fmtBRL(r.frete)} (já incluso no preço)`) : 'Sem frete';
   const extra = r.items.some(it=>it.descExtra>0)
-    ? '<div class="info-note mt8 mb0">Este orçamento tem desconto extra, definido na aba Desconto Extra.</div>' : '';
+    ? '<div class="info-note mt8 mb0">Este orçamento tem desconto extra, definido na aba Negociação Especial.</div>' : '';
   el.innerHTML = `
-    <div class="summary-row"><span class="lbl">${fmtNum(r.totalSacos)} sacos · ${fmtNum(r.pesoTotalKg)} kg</span><span>${esc(condicaoLabel())}</span></div>
+    <div class="summary-row"><span class="lbl">${r.temOutras ? r.items.length+' itens' : fmtNum(r.totalSacos)+' sacos · '+fmtNum(r.pesoTotalKg)+' kg'}</span><span>${r.temOutras ? Object.values(r.linhas).map(L=>esc(L.nome.split(' ')[0]+': '+L.termLabel)).join(' · ') : esc(condicaoLabel())}</span></div>
     <div class="summary-row" style="gap:12px;"><span class="lbl">Entrega</span><span style="text-align:right;">${linhaFrete}</span></div>
     <div class="summary-row total"><span class="lbl">Total para o cliente</span><span>${fmtBRL(r.totalCliente)}</span></div>
-    <div class="summary-row"><span class="lbl">Sua comissão (${r.desconto.com.toFixed(1).replace('.',',')}%)</span><span>${fmtBRL(r.comissaoValor)}</span></div>${extra}`;
+    <div class="summary-row"><span class="lbl">Sua comissão (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})</span><span>${fmtBRL(r.comissaoValor)}</span></div>${extra}${r.avisos.map(a=>`<div class="info-note aviso-linha">⚠️ ${esc(a)}</div>`).join('')}`;
 }
 function rpAtualizar(){ renderOrcamento(); renderCatalog(); rpRenderItens(); rpRenderResumo(); }
 function rpAdicionar(cod){
@@ -5359,10 +5926,10 @@ document.getElementById('rpBusca').addEventListener('input', e=>{
   const q = normalizaTxt(e.target.value.trim());
   const box = document.getElementById('rpSugestoes');
   if(q.length < 2){ box.innerHTML = ''; return; }
-  const achados = PRODUCTS.filter(p=>normalizaTxt(p.nome + ' ' + p.cod + ' ' + (p.cat||'')).includes(q)).slice(0, 8);
+  const achados = PRODUCTS.concat(linhaTodosProdutos()).filter(p=>normalizaTxt(p.nome + ' ' + p.cod + ' ' + (p.cat||'')).includes(q)).slice(0, 8);
   box.innerHTML = achados.length ? achados.map(p=>`
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);">
-      <div><div style="font-weight:700;">${esc(p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${esc(p.cod)} · ${p.peso} Kg · ${fmtBRL(precoItem(p))}</div></div>
+      <div><div style="font-weight:700;">${esc(p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${esc(p.cod)} · ${p.linha ? LINHA_ICONE[p.linha]+' '+esc(detalheProduto(p))+' · '+esc(precoUnitTxt(p, precoCatalogo(p))) : p.peso+' Kg · '+fmtBRL(precoItem(p))}</div></div>
       <button type="button" class="btn btn-primary btn-sm" onclick="rpAdicionar(${jsArg(p.cod)})">+ Adicionar</button>
     </div>`).join('') : '<div class="empty-state">Nenhum produto encontrado.</div>';
 });
@@ -5381,7 +5948,11 @@ document.getElementById('rpEntrega').addEventListener('click', ()=>{
 document.getElementById('rpRetira').addEventListener('click', ()=>{
   state.freteModo = 'retira'; toggleFreteUI(); renderOrcamento(); renderRapido();
 });
-document.getElementById('rpPrazo').addEventListener('change', e=>{ state.term = e.target.value; rpAtualizar(); });
+document.getElementById('rpPrazo').addEventListener('change', e=>{
+  state.term = e.target.value;
+  if(PRAZOS_LINHA.some(t=>t.key===state.term)) linhasAtivas().forEach(l=>{ linhaCfg(l).term = state.term; }); // mesmo prazo nas outras linhas
+  rpAtualizar();
+});
 document.getElementById('rpDesc').addEventListener('change', e=>{ state.descIdx = parseInt(e.target.value, 10) || 0; rpAtualizar(); });
 document.getElementById('rpWhats').addEventListener('click', ()=>{ rpSyncCliente(); document.getElementById('btnWhats').click(); });
 document.getElementById('rpPdf').addEventListener('click', ()=>{ rpSyncCliente(); document.getElementById('btnPdf').click(); });
