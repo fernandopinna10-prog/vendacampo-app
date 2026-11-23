@@ -1512,7 +1512,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.3.0";
+const APP_VERSION = "2.3.1";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -1873,7 +1873,7 @@ function novoOrcamento(){
   const n = document.getElementById('rpNome'); if(n) n.focus();
 }
 // Barra fixa com o total, a entrega e o botão Conferir (aparece com itens no orçamento)
-const VIEWS_COM_BARRA = ['catalogo','orcamento','rapido','descontoextra','custoanimal'];
+const VIEWS_COM_BARRA = ['orcamento'];   // só na aba Orçamento (no Catálogo atrapalhava a digitação)
 function atualizarBarraTotal(r){
   const bar = document.getElementById('barraTotal');
   if(!bar) return;
