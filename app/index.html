@@ -351,6 +351,21 @@
   .ha-box input{width:72px;padding:5px 6px;}
   .ha-info{font-size:12px;color:var(--ok);margin-top:3px;}
   .conf-linha{padding:8px 0;border-bottom:1px solid var(--line);}
+  .pendencia{background:#fdecec;border:1.5px solid #e9a3a3;color:#9b1c1c;font-weight:700;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13.5px;}
+  #inicioOrc{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;}
+  #inicioOrc .btn{flex:1 1 220px;font-size:15px;padding:13px;white-space:normal;text-align:center;line-height:1.3;min-width:0;}
+  #avisoOffline{display:none;background:#fff4e5;border:1.5px solid #e8c98a;color:#8a5a00;font-weight:600;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13.5px;}
+  #barraTotal{display:none;position:fixed;right:16px;bottom:16px;z-index:55;background:#fff;border:1.5px solid var(--brand);border-radius:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.16);padding:8px 8px 8px 14px;align-items:center;gap:12px;max-width:520px;left:auto;}
+  #barraTotal .bt-info{flex:1;min-width:0;line-height:1.25;}
+  #barraTotal .bt-total{font-weight:800;font-size:16px;color:var(--ink);}
+  #barraTotal .bt-sub{font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #barraTotal .bt-sub.alerta{color:#b3201f;font-weight:700;}
+  body.com-barra .main{padding-bottom:96px;}
+  @media (max-width:860px){
+    #barraTotal{left:8px;right:8px;bottom:calc(70px + env(safe-area-inset-bottom));max-width:none;}
+    body.com-barra .main{padding-bottom:160px;}
+  }
   #negComissoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;}
   .tag-prazo{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#eef0f2;color:#4b5563;margin-left:4px;}
   .tag-prazo.atrasado{background:#fde8e8;color:#b3201f;}
@@ -569,6 +584,7 @@
     </div>
 
     <!-- CATÁLOGO -->
+    <div id="avisoOffline" role="status"></div>
     <div class="view active" id="view-catalogo">
       <h1 class="page-title">Catálogo de Produtos</h1>
       <p class="page-sub" id="catalogSub">Tabela 04/26 BA — preço por saco, posto Vitória da Conquista/BA (Fábrica).</p>
@@ -582,6 +598,7 @@
         <button class="btn btn-primary btn-block mt16" id="btnComecarDia" style="font-size:15.5px;padding:13px;">▶️ COMEÇAR MEU DIA</button>
       </div>
 
+      <div id="inicioOrc"></div>
       <div id="linhaTabs" class="linha-tabs" style="display:none;"></div>
       <div class="search-row">
         <input type="text" id="searchInput" placeholder="Buscar produto ou código...">
@@ -702,7 +719,7 @@
               <option value="0">Sem frete no orçamento (frete já combinado / CIF incluso)</option>
             </select>
           </div>
-          <div id="freteCidadeWrap" class="autocomplete-wrap"><label>Cidade destino</label><input type="text" id="freteCidade" placeholder="Digite para buscar a cidade..." autocomplete="off"><div id="freteCidadeList" class="autocomplete-list"></div></div>
+          <div id="freteCidadeWrap" class="autocomplete-wrap"><label>Cidade destino</label><input type="text" id="freteCidade" placeholder="Digite para buscar a cidade..." autocomplete="off"><div id="freteCidadeList" class="autocomplete-list"></div><div id="freteCidadeAviso" class="pendencia" style="display:none;"></div></div>
           <div id="freteManualWrap" style="display:none;"><label id="freteValorLbl">Valor (R$)</label><input type="text" id="freteValor" inputmode="decimal" autocomplete="off" value="0"></div>
         </div>
         <div class="grid-3 mt8" id="freteFaixaWrap">
@@ -818,6 +835,7 @@
       <h1 class="page-title">Conferência antes de enviar</h1>
       <p class="page-sub">Revise os valores antes de gerar o PDF ou enviar por WhatsApp. O que vai para o cliente é só o valor negociado dos produtos — frete e comissão ficam aqui, só para você.</p>
 
+      <div class="pendencia" id="confPendencia" style="display:none;"></div>
       <div class="card" id="confClienteResumo"></div>
 
       <div class="card">
@@ -1034,6 +1052,7 @@
     </div>
   </div>
 </div>
+<div id="barraTotal"><div class="bt-info"><div class="bt-total" id="btTotal"></div><div class="bt-sub" id="btSub"></div></div><button type="button" class="btn btn-primary" id="btConferir">Conferir ▶</button></div>
 <div class="modal-overlay" id="contaOverlay" style="display:none;">
   <div class="modal-box">
     <h3>👤 Minha conta</h3>
@@ -1493,7 +1512,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.2.1";
+const APP_VERSION = "2.3.0";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -1634,6 +1653,7 @@ function linhasValidar(d){
         for(const v of T.volume){ if(!v || !num(v.min) || !num(v.pct) || v.pct < 0 || v.pct > 30) return 'desconto por volume inválido em ' + l; }
       }
     }
+    if(L.inseticidaKg != null && (!num(L.inseticidaKg) || L.inseticidaKg < 0 || L.inseticidaKg > 50)) return 'adicional de inseticida inválido';
     if(!Array.isArray(L.produtos) || !L.produtos.length) return 'linha sem produtos: ' + l;
     for(const p of L.produtos){
       if(!p || typeof p.cod !== 'string' || !p.cod || typeof p.nome !== 'string' || !p.nome) return 'produto sem código ou nome em ' + l;
@@ -1779,6 +1799,22 @@ function limparLinhasCfg(obj){
   return out;
 }
 // Falta de aprovação na negociação especial: devolve a mensagem ('' se está tudo certo)
+// Entrega pela tabela de frete sem cidade escolhida, ou sem tarifa para a faixa: não envia.
+function freteProblema(r){
+  if(state.freteModo !== 'tabela') return '';
+  r = r || calcOrcamento();
+  const precisa = r.items.filter(it=>it.linha !== 'medicamentos');
+  if(!precisa.length) return '';
+  const cid = FRETE_CIDADES.find(c=>c.cidade===state.freteCidade);
+  if(!cid) return 'Escolha a cidade de entrega no quadro Frete do Orçamento (ou marque Retirada na fábrica).';
+  for(const it of precisa){
+    const chave = it.linha === 'sementes' ? (r.linhas.sementes.faixa + '_25') : (state.freteFaixaKey + '_' + it.p.peso);
+    const v = cid[chave];
+    if(typeof v !== 'number' || !isFinite(v) || v < 0) return `Sem tarifa de frete para ${cid.cidade} na faixa deste pedido (${it.p.nome}). Use frete manual ou retirada.`;
+  }
+  return '';
+}
+function pendenciaEnvio(r){ r = r || calcOrcamento(); return freteProblema(r) || negociacaoPendente(r); }
 function negociacaoPendente(r){
   r = r || calcOrcamento();
   if((r.negociacao.temPrecoComb || r.negociacao.temComissaoComb) && !String(state.negAprovadoPor||'').trim())
@@ -1814,6 +1850,64 @@ function faixaLabel(key){ const f = FAIXAS_FRETE.find(x=>x.key===key); return f 
 function precoMostrar(p, k){ return p.linha === 'sementes' ? p.precoKg[k] : p[k]; }
 
 // Abas do catálogo (Nutrição | Sementes | Medicamentos) e tabela Consumidor/Revenda
+// Catálogo: começar um orçamento novo ou continuar o que está em andamento
+function renderInicioOrc(){
+  const box = document.getElementById('inicioOrc');
+  if(!box) return;
+  const nome = (document.getElementById('cliNome').value || '').trim();
+  if(!state.cart.length && !nome){
+    box.innerHTML = '<button type="button" class="btn btn-primary" onclick="novoOrcamento()">＋ Novo orçamento</button>';
+    return;
+  }
+  const r = calcOrcamento();
+  box.innerHTML = `<button type="button" class="btn btn-primary" onclick="showView('rapido')">▶ Continuar orçamento${nome ? ' — ' + esc(nome) : ''} · ${r.items.length} ${r.items.length===1?'item':'itens'} · ${fmtBRL(r.totalCliente)}</button>
+    <button type="button" class="btn btn-ghost" style="flex:0 1 auto;" onclick="novoOrcamento()">＋ Novo</button>`;
+}
+function novoOrcamento(){
+  const temAlgo = state.cart.length || (document.getElementById('cliNome').value || '').trim();
+  if(temAlgo){
+    document.getElementById('btnLimparTudo').click();   // pede confirmação e limpa
+    if(state.cart.length) return;                        // o vendedor cancelou
+  }
+  showView('rapido');
+  const n = document.getElementById('rpNome'); if(n) n.focus();
+}
+// Barra fixa com o total, a entrega e o botão Conferir (aparece com itens no orçamento)
+const VIEWS_COM_BARRA = ['catalogo','orcamento','rapido','descontoextra','custoanimal'];
+function atualizarBarraTotal(r){
+  const bar = document.getElementById('barraTotal');
+  if(!bar) return;
+  const ativa = document.querySelector('.view.active');
+  const v = ativa ? ativa.id.replace('view-','') : '';
+  const mostrar = state.cart.length > 0 && VIEWS_COM_BARRA.includes(v);
+  bar.style.display = mostrar ? 'flex' : 'none';
+  document.body.classList.toggle('com-barra', mostrar);
+  if(!mostrar) return;
+  r = r || calcOrcamento();
+  const pend = freteProblema(r);
+  document.getElementById('btTotal').textContent = fmtBRL(r.totalCliente) + ' · ' + r.items.length + (r.items.length===1 ? ' item' : ' itens');
+  const sub = document.getElementById('btSub');
+  sub.classList.toggle('alerta', !!pend);
+  sub.textContent = pend ? '⚠️ Escolha a cidade de entrega'
+    : r.retirada ? '🏭 Retirada na fábrica'
+    : (state.freteModo === 'tabela' ? '🚚 Entrega em ' + state.freteCidade : (r.comFrete ? '🚚 Frete manual incluso' : 'Sem frete'));
+}
+document.getElementById('btConferir').addEventListener('click', ()=>{ rpSyncCliente(); showView('conferencia'); });
+// Aviso de sem internet (o app continua funcionando com a tabela do aparelho)
+function atualizarAvisoOffline(){
+  const el = document.getElementById('avisoOffline');
+  if(!el) return;
+  const off = navigator.onLine === false;
+  el.style.display = off ? 'block' : 'none';
+  if(!off) return;
+  let ult = '';
+  try{ if(typeof SESSAO !== 'undefined' && SESSAO && SESSAO.validadoEm) ult = ' (última conferência: ' + new Date(SESSAO.validadoEm).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) + ')'; }catch(e){}
+  el.textContent = '📴 Sem internet — o app segue com a tabela deste aparelho' + ult + '. Orçamentos salvos ficam no aparelho; o WhatsApp só envia quando voltar o sinal.';
+}
+window.addEventListener('online', atualizarAvisoOffline);
+window.addEventListener('offline', atualizarAvisoOffline);
+setTimeout(atualizarAvisoOffline, 0);
+
 function renderLinhaTabs(){
   const box = document.getElementById('linhaTabs');
   if(!box) return;
@@ -1823,10 +1917,11 @@ function renderLinhaTabs(){
     if(state.catLinha !== 'nutricao'){ state.catLinha = 'nutricao'; refreshCatFilterOptions(); }
     return;
   }
-  const l = ativas.includes(state.catLinha) ? state.catLinha : 'nutricao';
+  const semRacao = PRODUCTS.length === 0;   // vendedor só de sementes/medicamentos
+  const l = ativas.includes(state.catLinha) ? state.catLinha : (semRacao ? ativas[0] : 'nutricao');
   state.catLinha = l;
   box.style.display = '';
-  let h = '<div class="linha-chips">' + ['nutricao'].concat(ativas).map(x=>
+  let h = '<div class="linha-chips">' + (semRacao ? [] : ['nutricao']).concat(ativas).map(x=>
     `<button type="button" class="chip ${x===l?'on':''}" onclick="escolherLinhaCatalogo(${jsArg(x)})">${LINHA_ICONE[x]||''} ${esc(linhaNome(x))}</button>`).join('') + '</div>';
   if(l !== 'nutricao'){
     const L = LINHAS[l];
@@ -2055,9 +2150,13 @@ function tabelaValidar(d){
     if(!Array.isArray(d.termos)) return 'prazos inválidos';
     const keys = d.termos.map(t=>t && t.key);
     for(const k of ['vista','d30','d3060','d306090']) if(!keys.includes(k)) return 'prazo padrão ausente: ' + k;
+    const vistos = new Set();
     for(const t of d.termos){
       if(!t || typeof t.key !== 'string' || typeof t.label !== 'string') return 'prazo sem nome';
+      if(vistos.has(t.key)) return 'prazo repetido: ' + t.key;
+      vistos.add(t.key);
       if(t.tipo !== 'padrao' && t.tipo !== 'especial') return 'tipo de prazo inválido: ' + t.label;
+      if(t.tipo === 'padrao' && !['vista','d30','d3060','d306090'].includes(t.key)) return 'prazo padrão desconhecido: ' + t.label;
       if(t.tipo === 'especial'){
         if(!num(t.divisor) || t.divisor <= 0 || t.divisor > 1.5) return 'divisor inválido em ' + t.label;
         if(!num(t.jurosPeriodo) || !num(t.jurosMensal) || !num(t.prazoMedio)) return 'dados do prazo especial incompletos: ' + t.label;
@@ -2066,7 +2165,7 @@ function tabelaValidar(d){
   }
   if(d.descontos !== undefined){
     if(!Array.isArray(d.descontos) || d.descontos.length < 1) return 'descontos inválidos';
-    for(const x of d.descontos){ if(!x || !num(x.desc) || !num(x.com) || x.desc < 0 || x.com < 0) return 'desconto inválido'; }
+    for(const x of d.descontos){ if(!x || !num(x.desc) || !num(x.com) || x.desc < 0 || x.desc > 50 || x.com < 0 || x.com > 30) return 'desconto inválido (desconto de 0 a 50%, comissão de 0 a 30%)'; }
   }
   if(d.frete !== undefined){
     if(!d.frete || typeof d.frete !== 'object' || Array.isArray(d.frete)) return 'frete inválido';
@@ -2155,6 +2254,18 @@ function tabelaUsar(m, origem){
   TABELA_EM_USO = {id: m.id, nome: m.nome, versao: m.dados.versao, comum: m.comumVersao};
   return '';
 }
+// Prazos, descontos e frete sem tabela de ração (vendedor só de Sementes/Medicamentos).
+function comumAplicar(c){
+  if(!comumCompleto(c)) return false;
+  const teste = {versao:'2000-01-01.0', produtos:[{cod:'x', nome:'x', peso:25, vista:1, d30:1, d3060:1, d306090:1}], termos:c.termos, descontos:c.descontos, frete:c.frete};
+  if(tabelaValidar(teste)) return false;
+  TERMS.splice(0, TERMS.length, ...c.termos.map(t=>Object.assign({}, t)));
+  DESCONTOS.splice(0, DESCONTOS.length, ...c.descontos.map(x=>Object.assign({}, x)));
+  Object.keys(FRETE_DATA).forEach(k=>{ delete FRETE_DATA[k]; });
+  Object.keys(c.frete).forEach(k=>{ FRETE_DATA[k] = c.frete[k]; });
+  FRETE_CIDADES = buildFreteCidades();
+  return true;
+}
 // Sementes e Medicamentos: vêm como uma "tabela" à parte (id "linhas"), só para quem
 // tem essa tabela liberada no painel. Sem ela, o app fica só com a Nutrição.
 let LINHAS_EM_USO = '';
@@ -2183,8 +2294,10 @@ function pacoteLinhasIniciar(){
 (function(){
   if(!SESSAO || SESSAO.trocarSenha) return;
   try{
-    const m = tabelaDoPacote(pacoteLerCache(), SESSAO.rep.tabelas);
+    const cache = pacoteLerCache();
+    const m = tabelaDoPacote(cache, SESSAO.rep.tabelas);
     if(m) tabelaUsar(m, 'cache');
+    else comumAplicar(cache.comum);   // só sementes/medicamentos: frete e prazos mesmo assim
   }catch(e){}
 })();
 function fmtDataBR(iso){
@@ -2211,7 +2324,7 @@ function tabelaRenderRotulo(){
   }
 }
 function tabelaRefreshUI(){
-  if(typeof RASCUNHO_KEY === 'string' && !rascunhoPronto && PRODUCTS.length) restaurarRascunho();
+  if(typeof RASCUNHO_KEY === 'string' && !rascunhoPronto && (PRODUCTS.length || linhasAtivas().length)) restaurarRascunho();
   state.cart = state.cart.filter(c=>findProduct(c.cod));
   refreshCatFilterOptions();
   refreshDescSelectOptions();
@@ -2319,6 +2432,14 @@ function pacoteAplicarTabela(novo, ids){
   const m = tabelaDoPacote(novo, ids);
   if(!m){
     const tinha = PRODUCTS.length > 0;
+    if(linhasAtivas().length && comumAplicar(novo.comum)){
+      // vendedor só de Sementes/Medicamentos: sem tabela de ração, mas com frete e prazos
+      PRODUCTS.splice(0, PRODUCTS.length);
+      TABELA_EM_USO = {id:'', nome:'', versao:'', comum:''};
+      tabelaUltimoStatus = agora + (linhasMudou ? ' — sementes e medicamentos atualizados' : ' — tabela já está atualizada');
+      tabelaRefreshUI();
+      return (linhasMudou || tinha) ? 'atualizada' : 'atual';
+    }
     PRODUCTS.splice(0, PRODUCTS.length);
     TABELA_EM_USO = {id:'', nome:'', versao:'', comum:''};
     TABELA_INFO.titulo = 'Tabela de preços'; TABELA_INFO.vigenteDesde = ''; TABELA_INFO.origem = 'central';
@@ -2361,7 +2482,7 @@ let state = {
   freteModo: "tabela",  // tabela | saco | fixo | 0
   freteValor: 0,
   freteItem: {},        // frete manual por saco de cada produto {cod: R$/saco}; sem valor = freteValor
-  freteCidade: FRETE_CIDADES[0].cidade,
+  freteCidade: '',       // cidade de entrega: o vendedor escolhe (sem cidade padrão)
   freteFaixaAuto: true,
   freteFaixaKey: "f1",
   descExtraAtivo: false,
@@ -2790,6 +2911,8 @@ function showView(v){
     if(bar && ab) bar.scrollLeft = ab.offsetLeft - (bar.clientWidth - ab.offsetWidth)/2; }
   if(v==='orcamento') renderOrcamento();
   if(v==='rapido') renderRapido();
+  if(v==='catalogo') renderInicioOrc();
+  atualizarBarraTotal();
   if(v==='descontoextra') renderDescontoExtra();
   if(v==='custoanimal') renderCustoAnimal();
   if(v==='conferencia') renderConferencia();
@@ -2831,6 +2954,8 @@ function renderCatalog(){
   const cf = catFilter.value;
   const wrap = document.getElementById('catalogList');
   renderLinhaTabs();
+  renderInicioOrc();
+  atualizarBarraTotal();
   let filtered = catalogoProdutos().filter(p=>{
     const matchQ = !q || p.nome.toLowerCase().includes(q) || p.cod.toLowerCase().includes(q);
     const matchC = !cf || p.cat===cf;
@@ -3937,7 +4062,7 @@ const freteCidadeSel = document.getElementById('freteCidade');
 const freteCidadeList = document.getElementById('freteCidadeList');
 function refreshFreteCidadeSelect(){
   if(!FRETE_CIDADES.find(c=>c.cidade===state.freteCidade)){
-    state.freteCidade = FRETE_CIDADES.length ? FRETE_CIDADES[0].cidade : '';
+    state.freteCidade = '';   // sem cidade padrão: o vendedor escolhe
   }
   freteCidadeSel.value = state.freteCidade;
 }
@@ -4023,7 +4148,8 @@ freteCidadeSel.addEventListener('blur', e=>{
       state.freteCidade = match.cidade;
       e.target.value = match.cidade;
     } else if(digitado===''){
-      // campo vazio — não força nenhuma cidade
+      // campo vazio: fica sem cidade (o orçamento com entrega pela tabela não sai assim)
+      state.freteCidade = '';
     } else {
       toast('Cidade não encontrada na tabela de frete — escolha uma das sugeridas');
       e.target.value = state.freteCidade;
@@ -4306,6 +4432,9 @@ function renderOrcamento(){
   document.getElementById('fretePesoView').value = `${r.pesoTotalKg.toLocaleString('pt-BR')} Kg`;
   document.getElementById('freteTotalView').value = fmtBRL(r.frete);
   renderLinhasConfig(r);
+  { const av = document.getElementById('freteCidadeAviso'), pf = freteProblema(r);
+    if(av){ av.style.display = pf ? '' : 'none'; av.textContent = pf ? '⚠️ ' + pf : ''; } }
+  atualizarBarraTotal(r);
   agendarRascunho();
 }
 
@@ -4356,6 +4485,8 @@ function renderConferencia(){
   document.getElementById('confTotalComFrete').textContent = fmtBRL(r.totalComFrete);
   document.getElementById('confComissao').textContent = fmtBRL(r.comissaoValor) + ` (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})`;
   renderConfLinhas(r);
+  { const el = document.getElementById('confPendencia'), p = pendenciaEnvio(r);
+    el.style.display = p ? '' : 'none'; el.textContent = p ? '⚠️ ' + p : ''; }
 }
 function updateQty(cod, val){
   let qty = parseInt(val,10);
@@ -4378,7 +4509,7 @@ document.getElementById('btnLimparTudo').addEventListener('click', ()=>{
     state.freteModo = "tabela";
     state.freteValor = 0;
     state.freteItem = {};
-    state.freteCidade = FRETE_CIDADES[0].cidade;
+    state.freteCidade = '';
     state.freteFaixaAuto = true;
     state.freteFaixaKey = "f1";
     state.descExtraAtivo = false;
@@ -4507,7 +4638,7 @@ function quoteText(){
 
 document.getElementById('btnWhats').addEventListener('click', ()=>{
   if(state.cart.length===0){ toast('Adicione produtos antes de gerar o orçamento'); return; }
-  { const pend = negociacaoPendente(); if(pend){ toast(pend); return; } }
+  { const pend = pendenciaEnvio(); if(pend){ toast(pend); return; } }
   const cli = clienteInfo();
   let phone = cli.tel.replace(/\D/g,'');
   // Sem telefone preenchido, o WhatsApp não sabe pra quem mandar e mostra só os
@@ -4525,6 +4656,7 @@ document.getElementById('btnWhats').addEventListener('click', ()=>{
     document.getElementById('cliTel').focus();
     return;
   }
+  if(navigator.onLine === false) toast('Sem internet: o WhatsApp vai abrir, mas a mensagem só sai quando voltar o sinal. Salve o orçamento no Histórico.');
   const text = encodeURIComponent(quoteText());
   const url = `https://wa.me/55${phone}?text=${text}`;
   window.open(url, '_blank');
@@ -4532,7 +4664,7 @@ document.getElementById('btnWhats').addEventListener('click', ()=>{
 
 document.getElementById('btnPdf').addEventListener('click', async ()=>{
   if(state.cart.length===0){ toast('Adicione produtos antes de gerar o PDF'); return; }
-  { const pend = negociacaoPendente(); if(pend){ toast(pend); return; } }
+  { const pend = pendenciaEnvio(); if(pend){ toast(pend); return; } }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const cli = clienteInfo();
@@ -4573,7 +4705,7 @@ document.getElementById('btnPdf').addEventListener('click', async ()=>{
 
 document.getElementById('btnSalvar').addEventListener('click', ()=>{
   if(state.cart.length===0){ toast('Adicione produtos antes de salvar'); return; }
-  { const pend = negociacaoPendente(); if(pend){ toast(pend); return; } }
+  { const pend = pendenciaEnvio(); if(pend){ toast(pend); return; } }
   const cli = clienteInfo();
   const r = calcOrcamento();
   state.history.unshift({
@@ -4621,7 +4753,7 @@ document.getElementById('btnSalvar').addEventListener('click', ()=>{
     state.retomadaDe = null;
   }
   salvarHistoricoLocal();
-  toast('Orçamento salvo no histórico');
+  toast('✅ Orçamento salvo neste aparelho (aba Histórico)');
   renderHistorico();
   renderDesempenho(); renderCopiloto(); atualizarBannerRetomada();
 });
@@ -5167,20 +5299,23 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
 document.getElementById('btnExportCsv').addEventListener('click', ()=>{
   if(state.history.length===0){ toast('Nenhum orçamento salvo para exportar'); return; }
   const csvEscape = v => {
-    const s = (v===null||v===undefined) ? '' : String(v);
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    let s = (v===null||v===undefined) ? '' : String(v);
+    if(/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // texto não vira fórmula no Excel
+    return /[",\n;]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
   };
   const header = ['Data','Cliente','Cidade','Vendedor','Status','Condição de pagamento','Qtd itens','Produtos','Desconto efetivo %','Comissão %','Total produto (sem frete)','Frete','Total cliente','Ciclo da venda','Motivo da perda','Retomar em'];
   const rows = state.history.map(h=>{
     const dt = new Date(h.data).toLocaleString('pt-BR');
-    const termLabel = TERMS.find(t=>t.key===h.term)?.label || h.term || '';
+    const termLabel = Array.isArray(h.linhasResumo) && h.linhasResumo.length
+      ? h.linhasResumo.map(L=>`${L.nome}: ${L.termo}`).join(' | ')
+      : (TERMS.find(t=>t.key===h.term)?.label || h.term || '');
     const produtos = (h.itens||[]).map(it=>`${it.nome} (x${it.qty})`).join(' | ');
     return [
       dt,
       h.cliente?.nome || '',
       h.cliente?.cidade || '',
       h.cliente?.vendedor || '',
-      (h.status||'pendente')==='fechado' ? 'Fechado' : 'Pendente',
+      (STATUS_INFO[normStatus(h)] || {label: normStatus(h)}).label,
       termLabel,
       (h.itens||[]).length,
       produtos,
@@ -5544,7 +5679,7 @@ function sessaoDecidir(r, modo){
     pacoteApagarCache();
     SESSAO.validadoEm = 0;
     sessaoGravar();
-    if(PRODUCTS.length > 0){ salvarRascunho(); recarregarApp(); return; }   // recarrega para tirar os preços da memória
+    if(PRODUCTS.length > 0 || linhasAtivas().length > 0){ salvarRascunho(); recarregarApp(); return; }   // recarrega para tirar os preços da memória
     mostrarBloqueio(r.motivo);
     return;
   }
@@ -5564,7 +5699,7 @@ function sessaoIniciar(){
   mostrarVerificando();
   let decidido = false;
   const p = sessaoSincronizar(20000);
-  if(sessaoGraceOk() && PRODUCTS.length > 0){
+  if(sessaoGraceOk() && (PRODUCTS.length > 0 || linhasAtivas().length > 0)){
     setTimeout(()=>{
       if(decidido) return;
       decidido = true;
@@ -5862,7 +5997,7 @@ function restaurarRascunho(){
 }
 function tentarRestaurarRascunho(){
   if(rascunhoPronto) return;
-  if(PRODUCTS.length === 0){
+  if(PRODUCTS.length === 0 && !linhasAtivas().length){
     // App sem tabela embutida e a tabela ainda não chegou: espera por ela
     // (tabelaRefreshUI chama a restauração) para não perder os produtos.
     let existe = false;
@@ -5917,16 +6052,17 @@ function rpRenderResumo(){
   const el = document.getElementById('rpResumo');
   if(!r.items.length){ el.innerHTML = '<div class="empty-state">O total aparece aqui.</div>'; return; }
   const linhaFrete = r.retirada ? 'Retirada na fábrica — sem frete'
+    : (state.freteModo==='tabela' && !state.freteCidade) ? '<b style="color:#b3201f;">Escolha a cidade de entrega</b>'
     : r.comFrete ? (state.freteModo==='tabela' ? `Frete para ${esc(state.freteCidade)}: ${fmtBRL(r.frete)} (já incluso no preço)` : `Frete manual: ${fmtBRL(r.frete)} (já incluso no preço)`) : 'Sem frete';
   const extra = r.items.some(it=>it.descExtra>0)
     ? '<div class="info-note mt8 mb0">Este orçamento tem desconto extra, definido na aba Negociação Especial.</div>' : '';
   el.innerHTML = `
     <div class="summary-row"><span class="lbl">${r.temOutras ? r.items.length+' itens' : fmtNum(r.totalSacos)+' sacos · '+fmtNum(r.pesoTotalKg)+' kg'}</span><span>${r.temOutras ? Object.values(r.linhas).map(L=>esc(L.nome.split(' ')[0]+': '+L.termLabel)).join(' · ') : esc(condicaoLabel())}</span></div>
     <div class="summary-row" style="gap:12px;"><span class="lbl">Entrega</span><span style="text-align:right;">${linhaFrete}</span></div>
-    <div class="summary-row total"><span class="lbl">Total para o cliente</span><span>${fmtBRL(r.totalCliente)}</span></div>
+    <div class="summary-row total"><span class="lbl">Total para o cliente</span><span>${fmtBRL(r.totalCliente)}</span></div>${(()=>{ const p = pendenciaEnvio(r); return p ? `<div class="pendencia">⚠️ ${esc(p)}</div>` : ''; })()}
     <div class="summary-row"><span class="lbl">Sua comissão (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})</span><span>${fmtBRL(r.comissaoValor)}</span></div>${extra}${r.avisos.map(a=>`<div class="info-note aviso-linha">⚠️ ${esc(a)}</div>`).join('')}`;
 }
-function rpAtualizar(){ renderOrcamento(); renderCatalog(); rpRenderItens(); rpRenderResumo(); }
+function rpAtualizar(){ renderOrcamento(); renderCatalog(); rpRenderItens(); rpRenderResumo(); atualizarBarraTotal(); }
 function rpAdicionar(cod){
   if(!findProduct(cod)) return;
   const ex = state.cart.find(c=>c.cod===cod);
