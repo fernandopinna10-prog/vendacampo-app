@@ -351,6 +351,7 @@
   .ha-box input{width:72px;padding:5px 6px;}
   .ha-info{font-size:12px;color:var(--ok);margin-top:3px;}
   .conf-linha{padding:8px 0;border-bottom:1px solid var(--line);}
+  .rp-linha .rp-linha-tit{font-weight:800;margin-bottom:6px;}
   .pendencia{background:#fdecec;border:1.5px solid #e9a3a3;color:#9b1c1c;font-weight:700;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13.5px;}
   #inicioOrc{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;}
   #inicioOrc .btn{flex:1 1 220px;font-size:15px;padding:13px;white-space:normal;text-align:center;line-height:1.3;min-width:0;}
@@ -640,9 +641,10 @@
       <div class="card">
         <div class="grid-2">
           <div><label for="rpPrazo">Condição de pagamento</label><select id="rpPrazo"></select></div>
-          <div><label for="rpDesc">Desconto de tabela</label><select id="rpDesc"></select></div>
+          <div id="rpDescWrap"><label for="rpDesc" id="rpDescLbl">Desconto de tabela</label><select id="rpDesc"></select></div>
         </div>
       </div>
+      <div id="rpLinhas"></div>
       <div class="card" id="rpResumo"></div>
       <div class="card">
         <button type="button" class="btn btn-primary btn-block" id="rpWhats">💬 Enviar pelo WhatsApp</button>
@@ -1512,7 +1514,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.3.1";
+const APP_VERSION = "2.4.0";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -6036,13 +6038,45 @@ function renderRapido(){
   rpRenderItens();
   rpRenderResumo();
 }
+// Orçamento rápido: cada linha (sementes, medicamentos) com tabela e desconto próprios
+function rpRenderLinhas(r){
+  const box = document.getElementById('rpLinhas');
+  if(!box) return;
+  const soOutras = r.temOutras && !r.linhas.nutricao;
+  const w = document.getElementById('rpDescWrap'); if(w) w.style.display = soOutras ? 'none' : '';
+  const lb = document.getElementById('rpDescLbl'); if(lb) lb.textContent = r.temOutras ? 'Desconto — 🐂 Nutrição Animal' : 'Desconto de tabela';
+  box.innerHTML = LINHA_IDS.filter(l=>r.linhas[l]).map(l=>{
+    const L = r.linhas[l], c = linhaCfg(l), info = LINHAS[l];
+    const tipos = ['consumidor','revenda'].filter(t=>info.tipos[t]).map(t=>
+      `<button type="button" class="chip chip-sm ${L.tipo===t?'on':''}" onclick="rpSetTipo(${jsArg(l)}, ${jsArg(t)})">${esc(info.tipos[t].label)}</button>`).join('');
+    const opts = linhaEscala(l).map((e,i)=>`<option value="${i}" ${i===c.descIdx?'selected':''}>${fmtPct(e.desc)} — comissão ${fmtPct1(e.com)}</option>`).join('');
+    return `<div class="card rp-linha"><div class="rp-linha-tit">${LINHA_ICONE[l]} ${esc(L.nome)} · ${esc(L.termLabel)}</div>
+      <div class="linha-chips">${tipos}</div>
+      <label>Desconto — ${esc(L.nome)}</label><select onchange="rpSetDesc(${jsArg(l)}, this.value)">${opts}</select></div>`;
+  }).join('');
+}
+function rpSetTipo(l, t){ setLinhaTipo(l, t); rpAtualizar(); }
+function rpSetDesc(l, i){ setLinhaDesc(l, i); rpAtualizar(); }
+// Área de plantio (ha) × kg/ha da variedade → sacos
+function rpHa(cod, val){
+  const p = findProduct(cod), ha = numeroBR(val), kgha = p ? kgHaMax(p.kgha) : 0;
+  if(!p || !(ha > 0) || !(kgha > 0)) return;
+  const it = state.cart.find(c=>c.cod===cod);
+  if(it) it.qty = Math.max(1, Math.ceil(ha * kgha / p.peso));
+  if(!state.haRapido) state.haRapido = {};
+  state.haRapido[cod] = ha;
+  rpAtualizar();
+}
+function rpComissaoLinhas(r){
+  return Object.values(r.linhas).map(L=>`<div class="summary-row"><span class="lbl">${LINHA_ICONE[L.linha]} Comissão ${esc(L.nome)} (${fmtPct1(L.comissaoPct)}${L.comissaoCombinada?' combinada':''})</span><span>${fmtBRL(L.comissao)}</span></div>`).join('');
+}
 function rpRenderItens(){
   const wrap = document.getElementById('rpItens');
   const r = calcOrcamento();
   if(!r.items.length){ wrap.innerHTML = '<div class="empty-state">Nenhum produto ainda. Busque acima e toque em Adicionar.</div>'; return; }
   wrap.innerHTML = r.items.map(it=>`
     <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
-      <div style="flex:1;min-width:0;"><div style="font-weight:700;">${esc(it.p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' '+esc(unidadeQtd(it.p, it.qty))+' · '+esc(precoUnitTxt(it.p, it.precoFinal)) : it.p.peso+' Kg · '+fmtBRL(it.precoFinal)+' o saco'} · <b>${fmtBRL(it.subFinal)}</b></div></div>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;">${esc(it.p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' '+esc(unidadeQtd(it.p, it.qty))+' · '+esc(precoUnitTxt(it.p, it.precoFinal)) : it.p.peso+' Kg · '+fmtBRL(it.precoFinal)+' o saco'} · <b>${fmtBRL(it.subFinal)}</b></div>${it.linha==='sementes' && kgHaMax(it.p.kgha) ? `<div class="ha-box">Área <input type="text" inputmode="decimal" autocomplete="off" placeholder="ha" value="${state.haRapido && state.haRapido[it.p.cod] ? esc(numeroTxtBR(state.haRapido[it.p.cod])) : ''}" onchange="rpHa(${jsArg(it.p.cod)}, this.value)"> ha · ${esc(it.p.kgha)} kg/ha → calcula os sacos</div>` : ''}</div>
       <input type="number" class="qty-input" style="width:72px;" min="1" inputmode="numeric" value="${Number(it.qty)}" onchange="rpQtd(${jsArg(it.p.cod)}, this.value)" aria-label="Quantidade de sacos">
       <button class="remove-x" onclick="rpRemover(${jsArg(it.p.cod)})" title="Remover">✕</button>
     </div>`).join('');
@@ -6050,6 +6084,7 @@ function rpRenderItens(){
 function rpRenderResumo(){
   const r = calcOrcamento();
   const el = document.getElementById('rpResumo');
+  rpRenderLinhas(r);
   if(!r.items.length){ el.innerHTML = '<div class="empty-state">O total aparece aqui.</div>'; return; }
   const linhaFrete = r.retirada ? 'Retirada na fábrica — sem frete'
     : (state.freteModo==='tabela' && !state.freteCidade) ? '<b style="color:#b3201f;">Escolha a cidade de entrega</b>'
@@ -6057,10 +6092,11 @@ function rpRenderResumo(){
   const extra = r.items.some(it=>it.descExtra>0)
     ? '<div class="info-note mt8 mb0">Este orçamento tem desconto extra, definido na aba Negociação Especial.</div>' : '';
   el.innerHTML = `
-    <div class="summary-row"><span class="lbl">${r.temOutras ? r.items.length+' itens' : fmtNum(r.totalSacos)+' sacos · '+fmtNum(r.pesoTotalKg)+' kg'}</span><span>${r.temOutras ? Object.values(r.linhas).map(L=>esc(L.nome.split(' ')[0]+': '+L.termLabel)).join(' · ') : esc(condicaoLabel())}</span></div>
+    <div class="summary-row"><span class="lbl">${r.temOutras ? r.items.length+' itens' : fmtNum(r.totalSacos)+' sacos · '+fmtNum(r.pesoTotalKg)+' kg'}</span><span>${r.temOutras ? (new Set(Object.values(r.linhas).map(L=>L.termLabel)).size === 1 ? esc(Object.values(r.linhas)[0].termLabel) : 'prazo por linha (veja acima)') : esc(condicaoLabel())}</span></div>
     <div class="summary-row" style="gap:12px;"><span class="lbl">Entrega</span><span style="text-align:right;">${linhaFrete}</span></div>
     <div class="summary-row total"><span class="lbl">Total para o cliente</span><span>${fmtBRL(r.totalCliente)}</span></div>${(()=>{ const p = pendenciaEnvio(r); return p ? `<div class="pendencia">⚠️ ${esc(p)}</div>` : ''; })()}
-    <div class="summary-row"><span class="lbl">Sua comissão (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})</span><span>${fmtBRL(r.comissaoValor)}</span></div>${extra}${r.avisos.map(a=>`<div class="info-note aviso-linha">⚠️ ${esc(a)}</div>`).join('')}`;
+${r.temOutras ? rpComissaoLinhas(r) : ''}
+    <div class="summary-row"><span class="lbl">${r.temOutras ? '<b>Sua comissão total</b>' : 'Sua comissão'} (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})</span><span>${fmtBRL(r.comissaoValor)}</span></div>${extra}${r.avisos.map(a=>`<div class="info-note aviso-linha">⚠️ ${esc(a)}</div>`).join('')}`;
 }
 function rpAtualizar(){ renderOrcamento(); renderCatalog(); rpRenderItens(); rpRenderResumo(); atualizarBarraTotal(); }
 function rpAdicionar(cod){
@@ -6114,6 +6150,7 @@ document.getElementById('rpRetira').addEventListener('click', ()=>{
 document.getElementById('rpPrazo').addEventListener('change', e=>{
   state.term = e.target.value;
   if(PRAZOS_LINHA.some(t=>t.key===state.term)) linhasAtivas().forEach(l=>{ linhaCfg(l).term = state.term; }); // mesmo prazo nas outras linhas
+  document.getElementById('rpPrazo').blur();
   rpAtualizar();
 });
 document.getElementById('rpDesc').addEventListener('change', e=>{ state.descIdx = parseInt(e.target.value, 10) || 0; rpAtualizar(); });
