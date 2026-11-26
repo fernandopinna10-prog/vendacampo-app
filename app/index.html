@@ -352,6 +352,20 @@
   .ha-info{font-size:12px;color:var(--ok);margin-top:3px;}
   .conf-linha{padding:8px 0;border-bottom:1px solid var(--line);}
   .rp-linha .rp-linha-tit{font-weight:800;margin-bottom:6px;}
+  .qty-btn{width:40px;height:40px;flex:0 0 40px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:20px;font-weight:800;color:var(--ink);cursor:pointer;line-height:1;}
+  .qty-btn:active{background:var(--brand-light);}
+  .qty-grupo{display:flex;align-items:center;gap:6px;}
+  .qty-grupo .qty-input{width:78px;text-align:center;}
+  #rpItens .qty-grupo{margin-left:auto;}
+  #previaTexto{width:100%;min-height:220px;font-family:inherit;font-size:13.5px;line-height:1.45;border:1px solid var(--border);border-radius:10px;padding:10px;background:#fbfcfd;white-space:pre-wrap;}
+  .mais-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:80;display:flex;align-items:flex-end;justify-content:center;}
+  .mais-box{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.2);}
+  .mais-tit{font-weight:800;font-size:15px;margin:2px 4px 10px;}
+  .mais-box button{display:flex;align-items:center;gap:12px;width:100%;padding:14px 12px;border:none;background:none;font-size:15.5px;font-weight:700;color:var(--ink);border-radius:12px;cursor:pointer;text-align:left;}
+  .mais-box button:active,.mais-box button.active{background:var(--brand-light);color:var(--brand);}
+  .mais-box button span{flex:1;}
+  .mais-box small{display:block;font-weight:500;color:var(--ink-soft);font-size:12.5px;}
+  .hist-hoje .hist-item{flex-wrap:wrap;}
   .pendencia{background:#fdecec;border:1.5px solid #e9a3a3;color:#9b1c1c;font-weight:700;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13.5px;}
   #inicioOrc{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;}
   #inicioOrc .btn{flex:1 1 220px;font-size:15px;padding:13px;white-space:normal;text-align:center;line-height:1.3;min-width:0;}
@@ -653,6 +667,7 @@
           <button type="button" class="btn btn-ghost" id="rpSalvar">💾 Salvar no histórico</button>
         </div>
         <button type="button" class="btn btn-ghost btn-block mt8" id="rpAgenda" style="display:none;">📅 Lembrar o retorno na agenda</button>
+        <button type="button" class="btn btn-ghost btn-block mt8" onclick="showView('orcamento')">🧾 Abrir o Orçamento completo (prazo por linha, frete manual)</button>
         <button type="button" class="btn btn-ghost btn-block mt8" id="rpNovo">🧹 Novo orçamento rápido</button>
       </div>
     </div>
@@ -864,6 +879,16 @@
 
       <div class="card" id="confLinhas" style="display:none;"></div>
 
+      <div class="card" id="previaCard">
+        <h3>📱 O que o cliente vai receber <span style="font-weight:400;color:var(--ink-soft);">(texto do WhatsApp)</span></h3>
+        <textarea id="previaTexto" readonly></textarea>
+        <div class="btn-row mt8">
+          <button type="button" class="btn btn-ghost" id="btnCopiarPrevia">📋 Copiar texto</button>
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('btnWhats').click()">💬 Abrir no WhatsApp</button>
+        </div>
+        <div class="info-note mt8 mb0">O número do orçamento é gerado na hora de enviar ou gerar o PDF.</div>
+      </div>
+
       <div class="card">
         <label for="cicloSelect">Ciclo da venda — define quando o app cobra o retorno</label>
         <select id="cicloSelect"></select>
@@ -872,7 +897,7 @@
 
       <div class="btn-row">
         <button class="btn btn-primary" id="btnPdf">⬇️ Gerar PDF (cliente)</button>
-        <button class="btn btn-ghost" id="btnWhats">💬 Enviar por WhatsApp (cliente)</button>
+        <button class="btn btn-ghost" id="btnWhats">💬 Abrir no WhatsApp (cliente)</button>
         <button class="btn btn-ghost" id="btnSalvar">💾 Salvar no histórico</button>
         <button class="btn btn-danger" id="btnLimparTudo">🧹 Limpar orçamento e cadastro</button>
       </div>
@@ -883,6 +908,7 @@
       <h1 class="page-title">Histórico de Orçamentos</h1>
       <p class="page-sub">Orçamentos salvos automaticamente neste aparelho. Faça backup de vez em quando (ou ao trocar de celular) para não perder os dados.</p>
 
+      <div class="card hist-hoje" id="histHoje" style="display:none;"></div>
       <div class="btn-row mt8" style="margin-bottom:16px;">
         <button class="btn btn-ghost" id="btnExport">⬇️ Exportar backup (.json)</button>
         <button class="btn btn-ghost" id="btnExportCsv">📊 Exportar planilha (.csv)</button>
@@ -1514,7 +1540,7 @@ if('serviceWorker' in navigator){
 /*<<<DATA:BRANDING_START>>>*/
 const BRANDING = {"empresa":"VendaCampo","subtitulo":"Vendas em campo","cor":"#f17909","logo":null,"apiUrl":"https://vendacampo-licenca.onrender.com"};
 /*<<<DATA:BRANDING_END>>>*/
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.5.1";
 
 /* =====================================================================
    SESSÃO DO VENDEDOR — login individual conferido no servidor.
@@ -1853,6 +1879,72 @@ function precoMostrar(p, k){ return p.linha === 'sementes' ? p.precoKg[k] : p[k]
 
 // Abas do catálogo (Nutrição | Sementes | Medicamentos) e tabela Consumidor/Revenda
 // Catálogo: começar um orçamento novo ou continuar o que está em andamento
+// Prévia do texto do WhatsApp (sem gastar um número de orçamento)
+function textoPrevia(){
+  const sem = !state.codigoAtual;
+  if(sem) state.codigoAtual = 'PREVIA';
+  let t = '';
+  try{ t = quoteText(); } finally { if(sem) state.codigoAtual = null; }
+  return t.replace('ORC-PREVIA', 'ORC-(gerado ao enviar)');
+}
+function renderPrevia(){
+  const el = document.getElementById('previaTexto');
+  if(!el) return;
+  el.value = state.cart.length ? textoPrevia() : 'Adicione produtos para ver a proposta.';
+}
+document.getElementById('btnCopiarPrevia').addEventListener('click', async ()=>{
+  if(!state.cart.length){ toast('Adicione produtos antes'); return; }
+  { const pend = pendenciaEnvio(); if(pend){ toast(pend); return; } }
+  const txt = quoteText();
+  renderPrevia();
+  try{ await navigator.clipboard.writeText(txt); toast('Texto copiado. Cole no WhatsApp ou onde quiser.'); }
+  catch(e){ const el = document.getElementById('previaTexto'); el.value = txt; el.select(); toast('Texto selecionado: toque em Copiar no celular.'); }
+});
+// Cidade com a UF (pelo código IBGE: 29 = BA, 31 = MG...)
+const UF_POR_IBGE = {11:'RO',12:'AC',13:'AM',14:'RR',15:'PA',16:'AP',17:'TO',21:'MA',22:'PI',23:'CE',24:'RN',25:'PB',26:'PE',27:'AL',28:'SE',29:'BA',31:'MG',32:'ES',33:'RJ',35:'SP',41:'PR',42:'SC',43:'RS',50:'MS',51:'MT',52:'GO',53:'DF'};
+function cidadeUF(nome){
+  const c = FRETE_CIDADES.find(x=>x.cidade===nome);
+  if(!c) return nome || '';
+  const uf = c.uf || UF_POR_IBGE[String(c.ibge||'').slice(0,2)] || '';
+  return uf ? c.cidade + '/' + uf : c.cidade;
+}
+// "há 5 min", "há 2 h", "há 3 dias"
+function tempoAtras(ms){
+  const min = Math.max(0, Math.round((Date.now() - ms)/60000));
+  if(min < 1) return 'agora';
+  if(min < 60) return 'há ' + min + ' min';
+  const h = Math.round(min/60);
+  if(h < 24) return 'há ' + h + ' h';
+  const d = Math.round(h/24);
+  return 'há ' + d + (d===1 ? ' dia' : ' dias');
+}
+// Botões − e + da quantidade
+function ajQtdCatalogo(cod, delta){
+  const el = document.getElementById('qty-'+cod);
+  if(el) el.value = Math.max(1, (parseInt(el.value,10)||1) + delta);
+}
+// Histórico: quem precisa de retorno hoje
+function renderHistHoje(){
+  const box = document.getElementById('histHoje');
+  if(!box) return;
+  const atrasados = calcularAbertos().filter(h=>h.atrasado);
+  const retomar = calcularRetomadas().filter(h=>h._vencida);
+  const lista = atrasados.map(h=>({h, txt:`${fmtBRL(h.total||0)} · ${h.diasPendente} dia(s) sem resposta`}))
+    .concat(retomar.map(h=>({h, txt:`perdido · hora de retomar · potencial ${fmtBRL(valorPotencial(h))}`})));
+  if(!lista.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  box.innerHTML = `<h3>🔔 Para retornar hoje <span style="font-weight:400;color:var(--ink-soft);">(${lista.length})</span></h3>` + lista.slice(0, 15).map(({h, txt})=>{
+    let tel = String((h.cliente && h.cliente.tel) || '').replace(/\D/g,'');
+    if(tel.length===13 && tel.startsWith('55')) tel = tel.slice(2);
+    const wa = tel.length >= 10 ? 'https://wa.me/55' + tel : '';
+    return `<div class="hist-item">
+      <div class="hi-main"><b>${esc(h.cliente.nome)}</b><span>Nº ${esc(formatarCodigo(h.numero))} · ${esc(txt)}</span></div>
+      ${wa ? `<a class="btn btn-primary btn-sm" href="${esc(wa)}" target="_blank" rel="noopener" onclick="registrarContato(${Number(h.id)})">💬 WhatsApp</a>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="reabrirComoNovo(${Number(h.id)})">▶ Refazer com preços de hoje</button>
+      <button class="btn btn-ghost btn-sm" onclick="lembrarNaAgenda(${Number(h.id)})">📅 Agenda</button>
+    </div>`;
+  }).join('');
+}
 function renderInicioOrc(){
   const box = document.getElementById('inicioOrc');
   if(!box) return;
@@ -1862,7 +1954,9 @@ function renderInicioOrc(){
     return;
   }
   const r = calcOrcamento();
-  box.innerHTML = `<button type="button" class="btn btn-primary" onclick="showView('rapido')">▶ Continuar orçamento${nome ? ' — ' + esc(nome) : ''} · ${r.items.length} ${r.items.length===1?'item':'itens'} · ${fmtBRL(r.totalCliente)}</button>
+  let quando = '';
+  try{ const d = JSON.parse(localStorage.getItem(RASCUNHO_KEY) || 'null'); if(d && d.salvoEm) quando = ' · editado ' + tempoAtras(d.salvoEm); }catch(e){}
+  box.innerHTML = `<button type="button" class="btn btn-primary" onclick="showView('rapido')">▶ Continuar orçamento${nome ? ' — ' + esc(nome) : ''} · ${r.items.length} ${r.items.length===1?'item':'itens'} · ${fmtBRL(r.totalCliente)}${quando}</button>
     <button type="button" class="btn btn-ghost" style="flex:0 1 auto;" onclick="novoOrcamento()">＋ Novo</button>`;
 }
 function novoOrcamento(){
@@ -1892,7 +1986,7 @@ function atualizarBarraTotal(r){
   sub.classList.toggle('alerta', !!pend);
   sub.textContent = pend ? '⚠️ Escolha a cidade de entrega'
     : r.retirada ? '🏭 Retirada na fábrica'
-    : (state.freteModo === 'tabela' ? '🚚 Entrega em ' + state.freteCidade : (r.comFrete ? '🚚 Frete manual incluso' : 'Sem frete'));
+    : (state.freteModo === 'tabela' ? '🚚 Entrega em ' + cidadeUF(state.freteCidade) : (r.comFrete ? '🚚 Frete manual incluso' : 'Sem frete'));
 }
 document.getElementById('btConferir').addEventListener('click', ()=>{ rpSyncCliente(); showView('conferencia'); });
 // Aviso de sem internet (o app continua funcionando com a tabela do aparelho)
@@ -3012,7 +3106,9 @@ function buildCatalogHtml(filtered, vendas){
           <div>30/60/90<br><b>${fmtBRL(p.linha ? precoMostrar(p,'d306090') : p.d306090)}</b></div>
         </div>
         <div class="prod-add">
-          <input type="number" class="qty-input" min="1" value="${inCart?inCart.qty:1}" id="qty-${esc(p.cod)}" title="${p.linha==='sementes'?'Sacos':(p.linha==='medicamentos'?'Frascos':'Sacos')}">
+          <div class="qty-grupo"><button type="button" class="qty-btn" aria-label="Menos um" onclick="ajQtdCatalogo(${jsArg(p.cod)}, -1)">−</button>
+          <input type="number" class="qty-input" min="1" value="${inCart?inCart.qty:1}" id="qty-${esc(p.cod)}" title="${p.linha==='medicamentos'?'Frascos':'Sacos'}">
+          <button type="button" class="qty-btn" aria-label="Mais um" onclick="ajQtdCatalogo(${jsArg(p.cod)}, 1)">+</button></div>
           <button class="btn btn-primary btn-sm" onclick="addToCart(${jsArg(p.cod)})">${inCart?'Atualizar':'+ Adicionar'}</button>
         </div>
       </div>`;
@@ -4478,7 +4574,7 @@ function renderConferencia(){
     : `(${r.desconto.desc.toFixed(2).replace('.',',')}%)`;
   document.getElementById('confSubtotal').textContent = fmtBRL(r.subtotal);
   document.getElementById('confDesconto').textContent = '- ' + fmtBRL(r.descontoValor) + ' ' + descLabel;
-  document.getElementById('confFreteCidade').textContent = r.comFrete ? state.freteCidade : (r.retirada ? 'retirada pelo cliente na fábrica' : 'sem frete');
+  document.getElementById('confFreteCidade').textContent = r.comFrete ? cidadeUF(state.freteCidade) : (r.retirada ? 'retirada pelo cliente na fábrica' : 'sem frete');
   document.getElementById('confFreteLinha').textContent = r.comFrete ? ('+ ' + fmtBRL(r.frete)) : 'R$ 0,00';
   document.getElementById('confTotalCliente').textContent = fmtBRL(r.totalCliente);
 
@@ -4487,6 +4583,7 @@ function renderConferencia(){
   document.getElementById('confTotalComFrete').textContent = fmtBRL(r.totalComFrete);
   document.getElementById('confComissao').textContent = fmtBRL(r.comissaoValor) + ` (${((r.temOutras || r.negociacao.temComissaoComb) ? r.comissaoPctEfetivo : r.desconto.com).toFixed(1).replace('.',',')}%${(r.temOutras || r.negociacao.temComissaoComb) ? ' médio' : ''})`;
   renderConfLinhas(r);
+  renderPrevia();
   { const el = document.getElementById('confPendencia'), p = pendenciaEnvio(r);
     el.style.display = p ? '' : 'none'; el.textContent = p ? '⚠️ ' + p : ''; }
 }
@@ -5040,6 +5137,7 @@ function renderHistoricoResumo(){
 }
 function renderHistorico(){
   renderHistoricoResumo();
+  renderHistHoje();
   const wrap = document.getElementById('histList');
   if(state.history.length===0){
     wrap.innerHTML = '<div class="empty-state">Nenhum orçamento salvo ainda nesta sessão.</div>';
@@ -6075,9 +6173,11 @@ function rpRenderItens(){
   const r = calcOrcamento();
   if(!r.items.length){ wrap.innerHTML = '<div class="empty-state">Nenhum produto ainda. Busque acima e toque em Adicionar.</div>'; return; }
   wrap.innerHTML = r.items.map(it=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
-      <div style="flex:1;min-width:0;"><div style="font-weight:700;">${esc(it.p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' '+esc(unidadeQtd(it.p, it.qty))+' · '+esc(precoUnitTxt(it.p, it.precoFinal)) : it.p.peso+' Kg · '+fmtBRL(it.precoFinal)+' o saco'} · <b>${fmtBRL(it.subFinal)}</b></div>${it.linha==='sementes' && kgHaMax(it.p.kgha) ? `<div class="ha-box">Área <input type="text" inputmode="decimal" autocomplete="off" placeholder="ha" value="${state.haRapido && state.haRapido[it.p.cod] ? esc(numeroTxtBR(state.haRapido[it.p.cod])) : ''}" onchange="rpHa(${jsArg(it.p.cod)}, this.value)"> ha · ${esc(it.p.kgha)} kg/ha → calcula os sacos</div>` : ''}</div>
-      <input type="number" class="qty-input" style="width:72px;" min="1" inputmode="numeric" value="${Number(it.qty)}" onchange="rpQtd(${jsArg(it.p.cod)}, this.value)" aria-label="Quantidade de sacos">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:10px 0;border-bottom:1px solid var(--line);">
+      <div style="flex:1 1 210px;min-width:0;"><div style="font-weight:700;">${esc(it.p.nome)}</div><div style="font-size:12.5px;color:var(--ink-soft);">${it.linha!=='nutricao' ? LINHA_ICONE[it.linha]+' '+esc(unidadeQtd(it.p, it.qty))+' · '+esc(precoUnitTxt(it.p, it.precoFinal)) : it.p.peso+' Kg · '+fmtBRL(it.precoFinal)+' o saco'} · <b>${fmtBRL(it.subFinal)}</b></div>${it.linha==='sementes' && kgHaMax(it.p.kgha) ? `<div class="ha-box">Área <input type="text" inputmode="decimal" autocomplete="off" placeholder="ha" value="${state.haRapido && state.haRapido[it.p.cod] ? esc(numeroTxtBR(state.haRapido[it.p.cod])) : ''}" onchange="rpHa(${jsArg(it.p.cod)}, this.value)"> ha <span style="white-space:nowrap;">(${esc(it.p.kgha)} kg/ha)</span></div>` : ''}</div>
+      <div class="qty-grupo"><button type="button" class="qty-btn" aria-label="Menos um" onclick="rpQtd(${jsArg(it.p.cod)}, ${Number(it.qty)-1})">−</button>
+      <input type="number" class="qty-input" min="1" inputmode="numeric" value="${Number(it.qty)}" onchange="rpQtd(${jsArg(it.p.cod)}, this.value)" aria-label="Quantidade">
+      <button type="button" class="qty-btn" aria-label="Mais um" onclick="rpQtd(${jsArg(it.p.cod)}, ${Number(it.qty)+1})">+</button></div>
       <button class="remove-x" onclick="rpRemover(${jsArg(it.p.cod)})" title="Remover">✕</button>
     </div>`).join('');
 }
@@ -6088,7 +6188,7 @@ function rpRenderResumo(){
   if(!r.items.length){ el.innerHTML = '<div class="empty-state">O total aparece aqui.</div>'; return; }
   const linhaFrete = r.retirada ? 'Retirada na fábrica — sem frete'
     : (state.freteModo==='tabela' && !state.freteCidade) ? '<b style="color:#b3201f;">Escolha a cidade de entrega</b>'
-    : r.comFrete ? (state.freteModo==='tabela' ? `Frete para ${esc(state.freteCidade)}: ${fmtBRL(r.frete)} (já incluso no preço)` : `Frete manual: ${fmtBRL(r.frete)} (já incluso no preço)`) : 'Sem frete';
+    : r.comFrete ? (state.freteModo==='tabela' ? `Frete para ${esc(cidadeUF(state.freteCidade))}: ${fmtBRL(r.frete)} (já incluso no preço)` : `Frete manual: ${fmtBRL(r.frete)} (já incluso no preço)`) : 'Sem frete';
   const extra = r.items.some(it=>it.descExtra>0)
     ? '<div class="info-note mt8 mb0">Este orçamento tem desconto extra, definido na aba Negociação Especial.</div>' : '';
   el.innerHTML = `
